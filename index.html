@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نظام متابعة الشحنات | Shipment Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#142b4a;--blue:#235b91;--teal:#0f9d8a;--bg:#f3f6fa;--card:#fff;--ink:#1b2b40;--muted:#708198;--line:#e3eaf1;--red:#c64747;--gold:#b7791f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700}
+.primary{background:var(--teal);color:#fff}.secondary{background:#eaf1f8;color:var(--navy)}.danger{background:#fff0f0;color:var(--red)}.ghost{background:transparent;color:var(--muted)}
+#login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#102845,#1d5b7b)}
+.login-card{width:min(430px,100%);background:#fff;border-radius:22px;padding:30px;box-shadow:0 20px 60px #071a2c55}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}.brand-mark{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--teal),#2673a6);display:grid;place-items:center;color:white;font-size:24px}
+h1,h2,h3,p{margin-top:0}.login-card h1{font-size:22px;margin-bottom:5px}.muted{color:var(--muted);font-size:13px}
+.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}.field label{font-size:13px;font-weight:700;color:#52657c}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink);outline:none}
+input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3px #4a90bd18}
+#app{display:none;min-height:100vh}.topbar{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:5}
+.topbrand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--navy)}.topbrand .brand-mark{width:38px;height:38px;font-size:18px;border-radius:12px}
+.layout{display:grid;grid-template-columns:245px 1fr;min-height:calc(100vh - 68px)}
+.sidebar{background:var(--navy);padding:20px 14px;color:#d8e5f2}.side-title{font-size:11px;color:#8ea8c1;padding:12px 12px 7px}
+.nav{display:flex;align-items:center;gap:11px;width:100%;text-align:right;background:transparent;color:#d8e5f2;margin:3px 0;padding:11px 13px;border-radius:10px;font-weight:600}
+.nav.active,.nav:hover{background:#ffffff19;color:#fff}.nav span:first-child{width:22px;text-align:center}
+.main{padding:26px;min-width:0}.pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.pagehead h1{font-size:23px;margin:0;color:var(--navy)}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 3px 12px #183b5b08}
+.stat small{color:var(--muted)}.stat strong{display:block;font-size:25px;color:var(--navy);margin-top:6px}
+.panel{margin-bottom:18px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.panel h3{font-size:16px;margin:0;color:var(--navy)}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.toolbar input{max-width:280px}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:right;font-size:13px;white-space:nowrap}th{background:#f7f9fc;color:#60748b;font-weight:800}td .actions{display:flex;gap:5px}
+.pill{display:inline-block;border-radius:30px;padding:3px 9px;background:#eaf5f3;color:#087c6c;font-size:11px;font-weight:700}
+.empty{text-align:center;padding:34px;color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:#0b1d2f88;z-index:10;padding:20px;overflow:auto}.modal.show{display:grid;place-items:start center}
+.modal-box{width:min(850px,100%);background:#fff;border-radius:18px;padding:22px;margin:30px auto}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.form-grid .wide{grid-column:1/-1}
+.modal-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:18px}
+.notice{padding:11px 13px;border-radius:10px;background:#fff8e8;color:#8b5c11;font-size:12px;margin:12px 0}
+#toast{position:fixed;bottom:20px;left:20px;background:#142b4a;color:#fff;padding:12px 18px;border-radius:12px;display:none;z-index:30;box-shadow:0 8px 30px #0002;max-width:min(500px,90vw)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;padding:8px}.side-title{display:none}.nav{min-width:max-content;width:auto}.cards{grid-template-columns:repeat(2,1fr)}.main{padding:16px}}
+@media(max-width:520px){.cards{grid-template-columns:1fr 1fr}.topbar{padding:0 12px}.main{padding:12px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.pagehead{align-items:flex-start;flex-direction:column}}
+@media print{.topbar,.sidebar,.toolbar,.no-print,button{display:none!important}.layout{display:block}.main{padding:0}.panel,.stat{box-shadow:none;border:0}body{background:#fff}}
+</style>
+</head>
+<body>
+<section id="login">
+ <div class="login-card">
+  <div class="brand"><div class="brand-mark">↗</div><div><h1>نظام متابعة الشحنات</h1><div class="muted">Shipment Management Cloud</div></div></div>
+  <h2 style="font-size:19px">تسجيل الدخول</h2><p class="muted">ادخل بحساب الموظف المسجل في النظام</p>
+  <form id="loginForm">
+   <div class="field"><label>البريد الإلكتروني</label><input id="email" type="email" required autocomplete="username" placeholder="name@company.com"></div>
+   <div class="field"><label>كلمة المرور</label><input id="password" type="password" required autocomplete="current-password" placeholder="••••••••"></div>
+   <button class="primary" style="width:100%;margin-top:10px" type="submit">دخول إلى النظام</button>
+  </form>
+  <div class="muted" style="margin-top:16px">يتم إنشاء حسابات الموظفين من لوحة إدارة Supabase بواسطة المدير.</div>
+ </div>
+</section>
+<div id="app">
+ <header class="topbar">
+  <div class="topbrand"><div class="brand-mark">↗</div><span>Shipment Management</span></div>
+  <div class="toolbar"><span id="userLabel" class="muted"></span><span id="roleLabel" class="pill"></span><button class="secondary" onclick="window.print()">طباعة</button><button class="ghost" id="logoutBtn">تسجيل الخروج</button></div>
+ </header>
+ <div class="layout">
+  <aside class="sidebar">
+   <div class="side-title">القائمة الرئيسية</div>
+   <button class="nav active" data-page="dashboard"><span>▦</span>لوحة التحكم</button>
+   <button class="nav" data-page="shipments"><span>🚢</span>الشحنات</button>
+   <button class="nav" data-page="expenses"><span>💳</span>المصروفات</button>
+   <button class="nav" data-page="invoices"><span>🧾</span>فواتير الموردين</button>
+   <button class="nav" data-page="brokers"><span>🏢</span>مكاتب التخليص</button>
+   <button class="nav" data-page="beneficiaries"><span>👥</span>المستفيدون</button>
+   <button class="nav" data-page="updates"><span>📝</span>سجل المتابعة</button>
+  </aside>
+  <main class="main">
+   <div class="pagehead"><h1 id="pageTitle">لوحة التحكم</h1><div class="toolbar"><span class="muted" id="connectionState">متصل بقاعدة البيانات</span><button class="primary" id="addBtn">＋ إضافة جديد</button></div></div>
+   <section id="dashboardPage">
+    <div class="cards">
+     <div class="stat"><small>إجمالي الشحنات</small><strong id="sShipments">—</strong></div>
+     <div class="stat"><small>الشحنات الواردة</small><strong id="sIncoming">—</strong></div>
+     <div class="stat"><small>الشحنات الصادرة</small><strong id="sOutgoing">—</strong></div>
+     <div class="stat"><small>إجمالي المصروفات (جنيه)</small><strong id="sExpenses">—</strong></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>أحدث الشحنات</h3><button class="secondary" onclick="showPage('shipments')">عرض الشحنات</button></div><div id="recentShipments"></div></div>
+    <div class="notice">هذه النسخة متصلة بقاعدة بيانات Supabase. لا تدخل بيانات تشغيل فعلية قبل اختبار جميع الصلاحيات والنسخ الاحتياطي.</div>
+   </section>
+   <section id="listPage" style="display:none">
+    <div class="panel"><div class="panel-head"><h3 id="listHeading">السجلات</h3><div class="toolbar"><input id="searchInput" placeholder="بحث في السجلات..."><button class="secondary" id="refreshBtn">تحديث</button></div></div><div class="table-wrap" id="tableHost"></div></div>
+   </section>
+  </main>
+ </div>
+</div>
+<div class="modal" id="editModal"><div class="modal-box"><div class="panel-head"><h3 id="modalTitle">إضافة سجل</h3><button class="ghost" id="closeModal">✕</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div class="modal-actions"><button class="primary" type="submit">حفظ البيانات</button><button class="secondary" type="button" id="cancelModal">إلغاء</button></div></form></div></div>
+<div id="toast"></div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SUPABASE_URL='https://dwcthmipuddkoteeipgx.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_tF26ap0lObQVo5UesJFP6Q_vpHKjW5d';
+const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
+const $=id=>document.getElementById(id);
+const config={
+ shipments:{title:'الشحنات',table:'shipments',cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','عدد الحاويات'],['expected_arrival_date','الوصول المتوقع'],['actual_arrival_date','الوصول الفعلي'],['factory_arrival_date','وصول المصنع'],['status','الحالة']],fields:[
+ ['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','الحالة','select',['new','in_progress','at_port','released','delivered','closed']],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات','textarea']],
+ },
+ expenses:{title:'المصروفات',table:'shipment_expenses',cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['exchange_rate','سعر الصرف'],['amount_egp','القيمة بالجنيه']],fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['notes','ملاحظات','textarea']]},
+ invoices:{title:'فواتير الموردين',table:'supplier_invoices',cols:[['invoice_number','رقم الفاتورة'],['supplier_name','المورد'],['invoice_date','التاريخ'],['shipment_id','الشحنة'],['currency','العملة'],['exchange_rate','سعر الصرف']],fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['notes','ملاحظات','textarea']]},
+ brokers:{title:'مكاتب التخليص',table:'customs_brokers',cols:[['name','اسم المكتب'],['contact_person','مسؤول التواصل'],['phone','الهاتف'],['email','البريد الإلكتروني']],fields:[['name','اسم المكتب','text'],['contact_person','مسؤول التواصل','text'],['phone','الهاتف','text'],['email','البريد الإلكتروني','email'],['address','العنوان','text'],['notes','ملاحظات','textarea']]},
+ beneficiaries:{title:'المستفيدون',table:'beneficiaries',cols:[['name','اسم الجهة'],['entity_type','نوع الجهة'],['phone','الهاتف'],['notes','ملاحظات']],fields:[['name','اسم الجهة','text'],['entity_type','نوع الجهة','select',['مورد','مكتب تخليص','جهة حكومية','شركة نقل','ميناء','أخرى']],['phone','الهاتف','text'],['notes','ملاحظات','textarea']]},
+ updates:{title:'سجل المتابعة',table:'shipment_updates',cols:[['update_date','تاريخ المتابعة'],['shipment_id','الشحنة'],['update_type','نوع الإجراء'],['description','تفاصيل الإجراء']],fields:[['shipment_id','الشحنة','shipment'],['update_date','تاريخ ووقت المتابعة','datetime-local'],['update_type','نوع الإجراء','select',['مستندات','شحن','وصول','جمارك','إفراج','نقل','استلام مصنع','أخرى']],['description','تفاصيل الإجراء','textarea']]}
+};
+function toast(msg){$('toast').textContent=msg;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',4000)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function labelFor(k){return ({incoming:'واردة',outgoing:'صادرة',new:'جديدة',in_progress:'قيد المتابعة',at_port:'بالميناء',released:'تم الإفراج',delivered:'تم التسليم',closed:'مغلقة',EGP:'جنيه مصري',USD:'دولار أمريكي'})[k]||k||'—'}
+async function loadProfile(){const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).single();if(error)throw error;currentRole=data.role;$('userLabel').textContent=data.full_name||currentUser.email;$('roleLabel').textContent=currentRole==='admin'?'مدير النظام':currentRole==='editor'?'موظف':'مشاهدة فقط';$('addBtn').style.display=currentRole==='viewer'?'none':''}
+async function lookup(table,id){if(!id)return '—';let {data}=await db.from(table).select('*').eq('id',id).maybeSingle();return data?(data.name||data.full_name||data.shipment_no||data.email||'—'):'—'}
+async function renderTable(key){page=key;const c=config[key];$('pageTitle').textContent=c.title;$('listHeading').textContent=c.title;$('dashboardPage').style.display='none';$('listPage').style.display='block';$('addBtn').style.display=currentRole==='viewer'?'none':'';const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);if(error){toast(error.message);return}rows=data||[];await drawRows(key,rows)}
+async function drawRows(key,data){const c=config[key];let html='<table><thead><tr>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'<th>إجراءات</th></tr></thead><tbody>';
+for(const r of data){html+='<tr>';for(const [k] of c.cols){let v=r[k];if(k==='shipment_id')v=await lookup('shipments',v);if(k==='broker_id')v=await lookup('customs_brokers',v);if(k==='beneficiary_id')v=await lookup('beneficiaries',v);if(k==='followup_responsible')v=await lookup('profiles',v);html+=`<td>${esc(labelFor(v))}</td>`}html+=`<td><div class="actions">${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`}
+html+='</tbody></table>';if(!data.length)html='<div class="empty">لا توجد سجلات حتى الآن</div>';$('tableHost').innerHTML=html;
+$('tableHost').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openForm(key,b.dataset.edit));$('tableHost').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteRow(key,b.dataset.del))}
+async function showPage(p){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===p));if(p==='dashboard'){page=p;$('pageTitle').textContent='لوحة التحكم';$('dashboardPage').style.display='block';$('listPage').style.display='none';$('addBtn').style.display='none';await dashboard()}else await renderTable(p)}
+async function dashboard(){const [s,e]=await Promise.all([db.from('shipments').select('id,direction,shipment_no,created_at',{count:'exact'}),db.from('shipment_expenses').select('amount_egp')]);if(s.error||e.error){toast((s.error||e.error).message);return}const all=s.data||[];$('sShipments').textContent=s.count??all.length;$('sIncoming').textContent=all.filter(x=>x.direction==='incoming').length;$('sOutgoing').textContent=all.filter(x=>x.direction==='outgoing').length;$('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});const recent=all.slice(0,8);$('recentShipments').innerHTML=recent.length?'<table><thead><tr><th>رقم الشحنة</th><th>الاتجاه</th><th>تاريخ التسجيل</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${esc(x.shipment_no)}</td><td>${esc(labelFor(x.direction))}</td><td>${esc(x.created_at?.slice(0,10))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">لا توجد شحنات مسجلة</div>'}
+async function optionsFor(type){let table,cols;if(type==='shipment'){table='shipments';cols=['id','shipment_no']}if(type==='broker'){table='customs_brokers';cols=['id','name']}if(type==='beneficiary'){table='beneficiaries';cols=['id','name']}if(type==='profile'){table='profiles';cols=['id','full_name']}let {data,error}=await db.from(table).select(cols.join(',')).limit(500);if(error)throw error;return data||[]}
+async function openForm(key,id=null){if(currentRole==='viewer')return;const c=config[key],record=id?rows.find(x=>x.id===id):{};editingId=id;$('modalTitle').textContent=(id?'تعديل ':'إضافة ')+c.title;let html='';
+for(const [name,label,type,opts] of c.fields){let val=record?.[name]??(name==='container_count'?1:name==='exchange_rate'?1:'');let control='';if(type==='select')control=`<select name="${name}">${opts.map(o=>`<option value="${esc(o)}" ${String(val)===o?'selected':''}>${esc(labelFor(o))}</option>`).join('')}</select>`;
+else if(['shipment','broker','beneficiary','profile'].includes(type)){let arr=await optionsFor(type);control=`<select name="${name}"><option value="">— اختر —</option>${arr.map(o=>{let v=o.id,t=o.shipment_no??o.name??o.full_name;return `<option value="${v}" ${val===v?'selected':''}>${esc(t)}</option>`}).join('')}</select>`}
+else if(type==='textarea')control=`<textarea name="${name}" rows="2">${esc(val)}</textarea>`;
+else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count'].includes(name)?'step="any"':''}>`;
+html+=`<div class="field ${type==='textarea'?'wide':''}"><label>${label}</label>${control}</div>`}
+$('formFields').innerHTML=html;$('editModal').classList.add('show')}
+async function saveRecord(ev){ev.preventDefault();const key=page,c=config[key];const obj=Object.fromEntries(new FormData(ev.target).entries());for(const [k,v] of Object.entries(obj)){if(v==='')obj[k]=null}if(key==='shipments'&&!editingId)obj.created_by=currentUser.id;if(key==='updates'&&!editingId)obj.created_by=currentUser.id;
+let q=editingId?db.from(c.table).update(obj).eq('id',editingId):db.from(c.table).insert(obj);const {error}=await q;if(error){toast(error.message);return}$('editModal').classList.remove('show');toast('تم حفظ البيانات بنجاح');await renderTable(key);if(key==='shipments')await dashboard()}
+async function deleteRow(key,id){if(!confirm('هل أنت متأكد من حذف هذا السجل؟'))return;const {error}=await db.from(config[key].table).delete().eq('id',id);if(error){toast(error.message);return}toast('تم الحذف');await renderTable(key)}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){toast(error.message);return}currentUser=data.user;try{await loadProfile()}catch(err){toast('تعذر تحميل صلاحيات الحساب: '+err.message);await db.auth.signOut();return}$('login').style.display='none';$('app').style.display='block';await dashboard()});
+$('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
+document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>showPage(n.dataset.page));
+$('addBtn').onclick=()=>openForm(page);$('closeModal').onclick=$('cancelModal').onclick=()=>$('editModal').classList.remove('show');$('recordForm').onsubmit=saveRecord;
+$('refreshBtn').onclick=()=>renderTable(page);$('searchInput').oninput=async e=>{const c=config[page],q=e.target.value.toLowerCase();const {data,error}=await db.from(c.table).select('*').limit(500);if(error)return;const filtered=(data||[]).filter(r=>Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));rows=data||[];await drawRows(page,filtered)};
+const {data:{session}}=await db.auth.getSession();if(session){currentUser=session.user;try{await loadProfile();$('login').style.display='none';$('app').style.display='block';await dashboard()}catch(e){await db.auth.signOut()}}
+</script>
+</body></html>

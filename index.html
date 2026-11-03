@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>نظام متابعة الشحنات | Shipment Management</title>
+<title>نظام متابعة الشحنات الاحترافي | Shipment Management Cloud</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- مكتبة تصدير الإكسيل SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{--navy:#142b4a;--blue:#235b91;--teal:#0f9d8a;--bg:#f3f6fa;--card:#fff;--ink:#1b2b40;--muted:#708198;--line:#e3eaf1;--red:#c64747;--gold:#b7791f}
+:root{--navy:#142b4a;--blue:#235b91;--teal:#0f9d8a;--bg:#f3f6fa;--card:#fff;--ink:#1b2b40;--muted:#708198;--line:#e3eaf1;--red:#c64747;--gold:#b7791f;--green:#2e7d32}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Arial,sans-serif}
 button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700}
 .primary{background:var(--teal);color:#fff}.secondary{background:#eaf1f8;color:var(--navy)}.danger{background:#fff0f0;color:var(--red)}.ghost{background:transparent;color:var(--muted)}
@@ -41,9 +41,15 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
 .modal-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:18px}
 .notice{padding:11px 13px;border-radius:10px;background:#fff8e8;color:#8b5c11;font-size:12px;margin:12px 0}
 #toast{position:fixed;bottom:20px;left:20px;background:#142b4a;color:#fff;padding:12px 18px;border-radius:12px;display:none;z-index:30;box-shadow:0 8px 30px #0002;max-width:min(500px,90vw)}
+/* التتبع المرئي Timeline CSS */
+.timeline{display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:10px;background:#f8fafc;border-radius:10px}
+.timeline-step{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--muted);position:relative;flex:1}
+.timeline-step .dot{width:14px;height:14px;border-radius:50%;background:#cbd5e1;margin-bottom:4px;z-index:2}
+.timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
+.timeline-step.completed .dot{background:var(--blue)}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;padding:8px}.side-title{display:none}.nav{min-width:max-content;width:auto}.cards{grid-template-columns:repeat(2,1fr)}.main{padding:16px}}
 @media(max-width:520px){.cards{grid-template-columns:1fr 1fr}.topbar{padding:0 12px}.main{padding:12px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.pagehead{align-items:flex-start;flex-direction:column}}
-@media print{.topbar,.sidebar,.toolbar,.no-print,button{display:none!important}.layout{display:block}.main{padding:0}.panel,.stat{box-shadow:none;border:0}body{background:#fff}}
+@media print{.topbar,.sidebar,.toolbar,.no-print,button,.actions{display:none!important}.layout{display:block}.main{padding:0}.panel,.stat{box-shadow:none;border:0}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -62,23 +68,24 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
 <div id="app">
  <header class="topbar">
   <div class="topbrand"><div class="brand-mark">↗</div><span>Shipment Management</span></div>
-  <div class="toolbar"><span id="userLabel" class="muted"></span><span id="roleLabel" class="pill"></span><button class="secondary" onclick="window.print()">طباعة</button><button class="ghost" id="logoutBtn">تسجيل الخروج</button></div>
+  <div class="toolbar"><span id="userLabel" class="muted"></span><span id="roleLabel" class="pill"></span><button class="secondary" onclick="window.print()">طباعة الشاشة</button><button class="ghost" id="logoutBtn">تسجيل الخروج</button></div>
  </header>
  <div class="layout">
   <aside class="sidebar">
    <div class="side-title">القائمة الرئيسية</div>
    <button class="nav active" data-page="dashboard"><span>▦</span>لوحة التحكم</button>
-   <button class="nav" data-page="shipments"><span>🚢</span>الشحنات</button>
-   <button class="nav" data-page="expenses"><span>💳</span>المصروفات</button>
+   <button class="nav" data-page="shipments"><span>🚢</span>إدارة الشحنات</button>
+   <button class="nav" data-page="expenses"><span>💳</span>المصروفات والرسوم</button>
    <button class="nav" data-page="invoices"><span>🧾</span>فواتير الموردين</button>
    <button class="nav" data-page="brokers"><span>🏢</span>مكاتب التخليص</button>
-   <button class="nav" data-page="beneficiaries"><span>👥</span>المستفيدون</button>
-   <button class="nav" data-page="updates"><span>📝</span>سجل المتابعة</button>
-   <button class="nav" data-page="reports"><span>📊</span>التقارير والإكسيل</button>
+   <button class="nav" data-page="beneficiaries"><span>👥</span>المستفيدون والجهات</button>
+   <button class="nav" data-page="updates"><span>📝</span>سجل التتبع والمتابعة</button>
+   <button class="nav" data-page="reports"><span>📊</span>التقارير وتصدير Excel</button>
   </aside>
   <main class="main">
    <div class="pagehead"><h1 id="pageTitle">لوحة التحكم</h1><div class="toolbar"><span class="muted" id="connectionState">متصل بقاعدة البيانات</span><button class="primary" id="addBtn">＋ إضافة جديد</button></div></div>
    
+   <!-- لوحة التحكم الإحصائية -->
    <section id="dashboardPage">
     <div class="cards">
      <div class="stat"><small>إجمالي الشحنات</small><strong id="sShipments">—</strong></div>
@@ -86,12 +93,13 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
      <div class="stat"><small>الشحنات الصادرة</small><strong id="sOutgoing">—</strong></div>
      <div class="stat"><small>إجمالي المصروفات (جنيه)</small><strong id="sExpenses">—</strong></div>
     </div>
-    <div class="panel"><div class="panel-head"><h3>أحدث الشحنات</h3><button class="secondary" onclick="showPage('shipments')">عرض الشحنات</button></div><div id="recentShipments"></div></div>
-    <div class="notice">هذه النسخة متصلة بقاعدة بيانات Supabase. لا تدخل بيانات تشغيل فعلية قبل اختبار جميع الصلاحيات والنسخ الاحتياطي.</div>
+    <div class="panel"><div class="panel-head"><h3>أحدث الشحنات المسجلة</h3><button class="secondary" onclick="showPage('shipments')">عرض قائمة الشحنات</button></div><div id="recentShipments"></div></div>
+    <div class="notice">نظام سحابي متكامل لإدارة ومتابعة الشحنات، التخليص الجمركي، والمصروفات الملحقة.</div>
    </section>
 
+   <!-- الجدول العام للسجلات -->
    <section id="listPage" style="display:none">
-    <div class="panel"><div class="panel-head"><h3 id="listHeading">السجلات</h3><div class="toolbar"><input id="searchInput" placeholder="بحث في السجلات..."><button class="secondary" id="refreshBtn">تحديث</button></div></div><div class="table-wrap" id="tableHost"></div></div>
+    <div class="panel"><div class="panel-head"><h3 id="listHeading">السجلات</h3><div class="toolbar"><input id="searchInput" placeholder="بحث في البيانات..."><button class="secondary" id="refreshBtn">تحديث</button></div></div><div class="table-wrap" id="tableHost"></div></div>
    </section>
 
    <!-- قسم التقارير والتصدير لإكسيل -->
@@ -99,12 +107,12 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
     <div class="panel">
      <div class="panel-head">
       <h3>تقارير الشحنات والتصدير الاحترافي</h3>
-      <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تحميل التقرير (Excel)</button>
+      <button onclick="exportReportsToExcel()" class="primary">📥 تحميل التقرير (Excel)</button>
      </div>
      
      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px;">
       <div style="flex: 1; min-width: 200px;">
-       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">فلتر حسب الاتجاه</label>
+       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">تصفية حسب الاتجاه</label>
        <select id="repFilterDirection" onchange="loadReportsData()" style="padding: 8px;">
         <option value="">كل الاتجاهات (وارد وصادر)</option>
         <option value="incoming">واردة</option>
@@ -112,7 +120,7 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
        </select>
       </div>
       <div style="flex: 1; min-width: 200px;">
-       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">فلتر حسب الحالة</label>
+       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">تصفية حسب حالة الشحنة</label>
        <select id="repFilterStatus" onchange="loadReportsData()" style="padding: 8px;">
         <option value="">كل الحالات</option>
         <option value="new">جديدة</option>
@@ -127,7 +135,7 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
 
      <div class="cards" style="margin-bottom: 20px;">
       <div class="stat"><small>عدد الشحنات في التقرير</small><strong id="repCount">0</strong></div>
-      <div class="stat"><small>إجمالي الحاويات</small><strong id="repContainers">0</strong></div>
+      <div class="stat"><small>إجمالي الحاويات المسجلة</small><strong id="repContainers">0</strong></div>
      </div>
 
      <div class="table-wrap">
@@ -141,7 +149,7 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
          <th>ميناء الشحن</th>
          <th>ميناء الوصول</th>
          <th>عدد الحاويات</th>
-         <th>الحالة</th>
+         <th>الحالة الحالية</th>
         </tr>
        </thead>
        <tbody id="reportsTableBody"></tbody>
@@ -153,8 +161,10 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
   </main>
  </div>
 </div>
+
 <div class="modal" id="editModal"><div class="modal-box"><div class="panel-head"><h3 id="modalTitle">إضافة سجل</h3><button class="ghost" id="closeModal">✕</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div class="modal-actions"><button class="primary" type="submit">حفظ البيانات</button><button class="secondary" type="button" id="cancelModal">إلغاء</button></div></form></div></div>
 <div id="toast"></div>
+
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const SUPABASE_URL='https://dwcthmipuddkoteeipgx.supabase.co';
@@ -162,19 +172,32 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_tF26ap0lObQVo5UesJFP6Q_vpHKjW5d';
 const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
 const $=id=>document.getElementById(id);
+
 const config={
- shipments:{title:'الشحنات',table:'shipments',cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','عدد الحاويات'],['status','الحالة']],fields:[
- ['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','الحالة','select',['new','in_progress','at_port','released','delivered','closed']],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات','textarea']],
+ shipments:{title:'الشحنات',table:'shipments',cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['container_count','الحاويات'],['status','مرحلة التتبع']],fields:[
+ ['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_url','رابط المستند / بوليصة الشحن (سحابي)','text'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']],
  },
- expenses:{title:'المصروفات',table:'shipment_expenses',cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['exchange_rate','سعر الصرف'],['amount_egp','القيمة بالجنيه']],fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['notes','ملاحظات','textarea']]},
- invoices:{title:'فواتير الموردين',table:'supplier_invoices',cols:[['invoice_number','رقم الفاتورة'],['supplier_name','المورد'],['invoice_date','التاريخ'],['shipment_id','الشحنة'],['currency','العملة'],['exchange_rate','سعر الصرف']],fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['notes','ملاحظات','textarea']]},
+ expenses:{title:'المصروفات',table:'shipment_expenses',cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['amount_egp','القيمة بالجنيه']],fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['receipt_url','رابط صورة الإيصال / الفاتورة','text'],['notes','ملاحظات','textarea']]},
+ invoices:{title:'فواتير الموردين',table:'supplier_invoices',cols:[['invoice_number','رقم الفاتورة'],['supplier_name','المورد'],['invoice_date','التاريخ'],['shipment_id','الشحنة'],['currency','العملة']],fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['notes','ملاحظات','textarea']]},
  brokers:{title:'مكاتب التخليص',table:'customs_brokers',cols:[['name','اسم المكتب'],['contact_person','مسؤول التواصل'],['phone','الهاتف'],['email','البريد الإلكتروني']],fields:[['name','اسم المكتب','text'],['contact_person','مسؤول التواصل','text'],['phone','الهاتف','text'],['email','البريد الإلكتروني','email'],['address','العنوان','text'],['notes','ملاحظات','textarea']]},
- beneficiaries:{title:'المستفيدون',table:'beneficiaries',cols:[['name','اسم الجهة'],['entity_type','نوع الجهة'],['phone','الهاتف'],['notes','ملاحظات']],fields:[['name','اسم الجهة','text'],['entity_type','نوع الجهة','select',['مورد','مكتب تخليص','جهة حكومية','شركة نقل','ميناء','أخرى']],['phone','الهاتف','text'],['notes','ملاحظات','textarea']]},
+ beneficiaries:{title:'المستفيدون',table:'beneficiaries',cols:[['name','اسم الجهة'],['entity_type','نوع الجهة'],['phone','الهاتف']],fields:[['name','اسم الجهة','text'],['entity_type','نوع الجهة','select',['مورد','مكتب تخليص','جهة حكومية','شركة نقل','ميناء','أخرى']],['phone','الهاتف','text'],['notes','ملاحظات','textarea']]},
  updates:{title:'سجل المتابعة',table:'shipment_updates',cols:[['update_date','تاريخ المتابعة'],['shipment_id','الشحنة'],['update_type','نوع الإجراء'],['description','تفاصيل الإجراء']],fields:[['shipment_id','الشحنة','shipment'],['update_date','تاريخ ووقت المتابعة','datetime-local'],['update_type','نوع الإجراء','select',['مستندات','شحن','وصول','جمارك','إفراج','نقل','استلام مصنع','أخرى']],['description','تفاصيل الإجراء','textarea']]}
 };
+
 function toast(msg){$('toast').textContent=msg;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',4000)}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function labelFor(k){return ({incoming:'واردة',outgoing:'صادرة',new:'جديدة',in_progress:'قيد المتابعة',at_port:'بالميناء',released:'تم الإفراج',delivered:'تم التسليم',closed:'مغلقة',EGP:'جنيه مصري',USD:'دولار أمريكي'})[k]||k||'—'}
+
+// توليد التتبع المرئي Timeline للشحنة
+function renderTimeline(status){
+ const steps=[{k:'new',t:'جديدة'},{k:'in_progress',t:'متابعة'},{k:'at_port',t:'بالميناء'},{k:'released',t:'إفراج'},{k:'delivered',t:'تسليم'}];
+ const currentIdx=steps.findIndex(s=>s.k===status);
+ return `<div class="timeline">${steps.map((s,i)=>{
+  let cls=i===currentIdx?'active':(i<currentIdx?'completed':'');
+  return `<div class="timeline-step ${cls}"><div class="dot"></div><span>${s.t}</span></div>`;
+ }).join('')}</div>`;
+}
+
 async function loadProfile(){const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).single();if(error)throw error;currentRole=data.role;$('userLabel').textContent=data.full_name||currentUser.email;$('roleLabel').textContent=currentRole==='admin'?'مدير النظام':currentRole==='editor'?'موظف':'مشاهدة فقط';$('addBtn').style.display=currentRole==='viewer'?'none':''}
 async function lookup(table,id){if(!id)return '—';let {data}=await db.from(table).select('*').eq('id',id).maybeSingle();return data?(data.name||data.full_name||data.shipment_no||data.email||'—'):'—'}
 
@@ -204,15 +227,53 @@ async function drawRows(key,data){
    if(k==='broker_id')v=await lookup('customs_brokers',v);
    if(k==='beneficiary_id')v=await lookup('beneficiaries',v);
    if(k==='followup_responsible')v=await lookup('profiles',v);
-   html+=`<td>${esc(labelFor(v))}</td>`;
+   
+   if(k==='status' && key==='shipments'){
+    html+=`<td style="min-width:210px">${renderTimeline(v)}</td>`;
+   } else {
+    html+=`<td>${esc(labelFor(v))}</td>`;
+   }
   }
-  html+=`<td><div class="actions">${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`;
+  
+  let extraBtns='';
+  if(key==='shipments'){
+   extraBtns+=`<button class="secondary" onclick="printManifest('${r.id}')" title="طباعة بوليصة">📄</button>`;
+   if(r.document_url) extraBtns+=`<a href="${esc(r.document_url)}" target="_blank" class="pill" style="text-decoration:none;margin-right:4px">📎 مستند</a>`;
+  }
+
+  html+=`<td><div class="actions">${extraBtns}${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`;
  }
  html+='</tbody></table>';
  if(!data.length)html='<div class="empty">لا توجد سجلات حتى الآن</div>';
  $('tableHost').innerHTML=html;
  $('tableHost').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openForm(key,b.dataset.edit));
  $('tableHost').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteRow(key,b.dataset.del))
+}
+
+// طباعة بوليصة الشحنة
+window.printManifest=async function(id){
+ const item=rows.find(x=>x.id===id);
+ if(!item) return;
+ const w=window.open('','_blank');
+ w.document.write(`
+  <html dir="rtl">
+  <head><title>بوليصة شحنة - ${item.shipment_no}</title><style>body{font-family:sans-serif;padding:30px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:10px;text-align:right}</style></head>
+  <body>
+   <h2>بيان بوليصة الشحنة الرسمي</h2>
+   <p><strong>رقم الشحنة:</strong> ${item.shipment_no || '-'}</p>
+   <p><strong>اسم المورد:</strong> ${item.supplier_name || '-'}</p>
+   <p><strong>رقم ACID:</strong> ${item.acid_number || '-'}</p>
+   <table>
+    <tr><th>الاتجاه</th><td>${labelFor(item.direction)}</td></tr>
+    <tr><th>ميناء الشحن</th><td>${item.shipping_port || '-'}</td></tr>
+    <tr><th>ميناء الوصول</th><td>${item.arrival_port || '-'}</td></tr>
+    <tr><th>عدد الحاويات</th><td>${item.container_count || 0}</td></tr>
+    <tr><th>الحالة الحالية</th><td>${labelFor(item.status)}</td></tr>
+   </table>
+   <script>window.print();<\/script>
+  </body>
+  </html>
+ `);
 }
 
 async function showPage(p){
@@ -273,7 +334,7 @@ async function loadReportsData(){
  document.getElementById('repContainers').innerText=totalContainers;
 }
 
-function exportReportsToExcel(){
+window.exportReportsToExcel=function(){
  const table=document.getElementById('reportsTable');
  if(!table) return;
  const workbook=XLSX.utils.table_to_book(table,{sheet:"تقرير الشحنات"});

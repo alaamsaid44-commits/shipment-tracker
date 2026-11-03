@@ -1,0 +1,26 @@
+<!-- قسم التقارير والإكسيل -->
+<div id="reports-tab" class="tab-content" style="display: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>تقارير النظام والتصدير</h2>
+    <button onclick="exportTableToExcel()" style="background-color: #2e7d32; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+      📥 تحميل التقرير (Excel)
+    </button>
+  </div>
+
+  <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <table id="reportsTable" style="width: 100%; border-collapse: collapse; text-align: right;">
+      <thead>
+        <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+          <th style="padding: 10px;">رقم الشحنة</th>
+          <th style="padding: 10px;">نوع الشحنة</th>
+          <th style="padding: 10px;">العميل / المورد</th>
+          <th style="padding: 10px;">الحالة</th>
+          <th style="padding: 10px;">المبلغ (جنيه)</th>
+        </tr>
+      </thead>
+      <tbody id="reportsTableBody">
+        <!-- سيتم تعبئة البيانات ديناميكياً من قاعدة البيانات -->
+      </tbody>
+    </table>
+  </div>
+</div>

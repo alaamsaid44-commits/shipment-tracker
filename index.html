@@ -102,7 +102,6 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
       <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تحميل التقرير (Excel)</button>
      </div>
      
-     <!-- فلاتر التقرير -->
      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px;">
       <div style="flex: 1; min-width: 200px;">
        <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">فلتر حسب الاتجاه</label>
@@ -126,13 +125,11 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
       </div>
      </div>
 
-     <!-- كروت الملخص الإحصائي -->
      <div class="cards" style="margin-bottom: 20px;">
       <div class="stat"><small>عدد الشحنات في التقرير</small><strong id="repCount">0</strong></div>
       <div class="stat"><small>إجمالي الحاويات</small><strong id="repContainers">0</strong></div>
      </div>
 
-     <!-- جدول عرض التقارير -->
      <div class="table-wrap">
       <table id="reportsTable">
        <thead>
@@ -147,9 +144,7 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
          <th>الحالة</th>
         </tr>
        </thead>
-       <tbody id="reportsTableBody">
-        <!-- بيانات تفاعلية -->
-       </tbody>
+       <tbody id="reportsTableBody"></tbody>
       </table>
      </div>
     </div>
@@ -168,7 +163,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
 const $=id=>document.getElementById(id);
 const config={
- shipments:{title:'الشحنات',table:'shipments',cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','عدد الحاويات'],['expected_arrival_date','الوصول المتوقع'],['actual_arrival_date','الوصول الفعلي'],['factory_arrival_date','وصول المصنع'],['status','الحالة']],fields:[
+ shipments:{title:'الشحنات',table:'shipments',cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','عدد الحاويات'],['status','الحالة']],fields:[
  ['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','الحالة','select',['new','in_progress','at_port','released','delivered','closed']],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات','textarea']],
  },
  expenses:{title:'المصروفات',table:'shipment_expenses',cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['exchange_rate','سعر الصرف'],['amount_egp','القيمة بالجنيه']],fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['notes','ملاحظات','textarea']]},
@@ -276,7 +271,6 @@ async function loadReportsData(){
  
  document.getElementById('repCount').innerText=list.length;
  document.getElementById('repContainers').innerText=totalContainers;
- window._lastReportData=list; // حفظ مؤقت للتصدير
 }
 
 function exportReportsToExcel(){

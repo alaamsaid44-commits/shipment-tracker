@@ -6,6 +6,8 @@
 <title>نظام متابعة الشحنات | Shipment Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- مكتبة تصدير الإكسيل SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--navy:#142b4a;--blue:#235b91;--teal:#0f9d8a;--bg:#f3f6fa;--card:#fff;--ink:#1b2b40;--muted:#708198;--line:#e3eaf1;--red:#c64747;--gold:#b7791f}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Arial,sans-serif}
@@ -72,9 +74,11 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
    <button class="nav" data-page="brokers"><span>🏢</span>مكاتب التخليص</button>
    <button class="nav" data-page="beneficiaries"><span>👥</span>المستفيدون</button>
    <button class="nav" data-page="updates"><span>📝</span>سجل المتابعة</button>
+   <button class="nav" data-page="reports"><span>📊</span>التقارير والإكسيل</button>
   </aside>
   <main class="main">
    <div class="pagehead"><h1 id="pageTitle">لوحة التحكم</h1><div class="toolbar"><span class="muted" id="connectionState">متصل بقاعدة البيانات</span><button class="primary" id="addBtn">＋ إضافة جديد</button></div></div>
+   
    <section id="dashboardPage">
     <div class="cards">
      <div class="stat"><small>إجمالي الشحنات</small><strong id="sShipments">—</strong></div>
@@ -85,9 +89,72 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
     <div class="panel"><div class="panel-head"><h3>أحدث الشحنات</h3><button class="secondary" onclick="showPage('shipments')">عرض الشحنات</button></div><div id="recentShipments"></div></div>
     <div class="notice">هذه النسخة متصلة بقاعدة بيانات Supabase. لا تدخل بيانات تشغيل فعلية قبل اختبار جميع الصلاحيات والنسخ الاحتياطي.</div>
    </section>
+
    <section id="listPage" style="display:none">
     <div class="panel"><div class="panel-head"><h3 id="listHeading">السجلات</h3><div class="toolbar"><input id="searchInput" placeholder="بحث في السجلات..."><button class="secondary" id="refreshBtn">تحديث</button></div></div><div class="table-wrap" id="tableHost"></div></div>
    </section>
+
+   <!-- قسم التقارير والتصدير لإكسيل -->
+   <section id="reportsPage" style="display:none">
+    <div class="panel">
+     <div class="panel-head">
+      <h3>تقارير الشحنات والتصدير الاحترافي</h3>
+      <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تحميل التقرير (Excel)</button>
+     </div>
+     
+     <!-- فلاتر التقرير -->
+     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px;">
+      <div style="flex: 1; min-width: 200px;">
+       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">فلتر حسب الاتجاه</label>
+       <select id="repFilterDirection" onchange="loadReportsData()" style="padding: 8px;">
+        <option value="">كل الاتجاهات (وارد وصادر)</option>
+        <option value="incoming">واردة</option>
+        <option value="outgoing">صادرة</option>
+       </select>
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">فلتر حسب الحالة</label>
+       <select id="repFilterStatus" onchange="loadReportsData()" style="padding: 8px;">
+        <option value="">كل الحالات</option>
+        <option value="new">جديدة</option>
+        <option value="in_progress">قيد المتابعة</option>
+        <option value="at_port">بالميناء</option>
+        <option value="released">تم الإفراج</option>
+        <option value="delivered">تم التسليم</option>
+        <option value="closed">مغلقة</option>
+       </select>
+      </div>
+     </div>
+
+     <!-- كروت الملخص الإحصائي -->
+     <div class="cards" style="margin-bottom: 20px;">
+      <div class="stat"><small>عدد الشحنات في التقرير</small><strong id="repCount">0</strong></div>
+      <div class="stat"><small>إجمالي الحاويات</small><strong id="repContainers">0</strong></div>
+     </div>
+
+     <!-- جدول عرض التقارير -->
+     <div class="table-wrap">
+      <table id="reportsTable">
+       <thead>
+        <tr>
+         <th>رقم الشحنة</th>
+         <th>الاتجاه</th>
+         <th>رقم ACID</th>
+         <th>المورد</th>
+         <th>ميناء الشحن</th>
+         <th>ميناء الوصول</th>
+         <th>عدد الحاويات</th>
+         <th>الحالة</th>
+        </tr>
+       </thead>
+       <tbody id="reportsTableBody">
+        <!-- بيانات تفاعلية -->
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </section>
+
   </main>
  </div>
 </div>
@@ -115,57 +182,219 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function labelFor(k){return ({incoming:'واردة',outgoing:'صادرة',new:'جديدة',in_progress:'قيد المتابعة',at_port:'بالميناء',released:'تم الإفراج',delivered:'تم التسليم',closed:'مغلقة',EGP:'جنيه مصري',USD:'دولار أمريكي'})[k]||k||'—'}
 async function loadProfile(){const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).single();if(error)throw error;currentRole=data.role;$('userLabel').textContent=data.full_name||currentUser.email;$('roleLabel').textContent=currentRole==='admin'?'مدير النظام':currentRole==='editor'?'موظف':'مشاهدة فقط';$('addBtn').style.display=currentRole==='viewer'?'none':''}
 async function lookup(table,id){if(!id)return '—';let {data}=await db.from(table).select('*').eq('id',id).maybeSingle();return data?(data.name||data.full_name||data.shipment_no||data.email||'—'):'—'}
-async function renderTable(key){page=key;const c=config[key];$('pageTitle').textContent=c.title;$('listHeading').textContent=c.title;$('dashboardPage').style.display='none';$('listPage').style.display='block';$('addBtn').style.display=currentRole==='viewer'?'none':'';const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);if(error){toast(error.message);return}rows=data||[];await drawRows(key,rows)}
-async function drawRows(key,data){const c=config[key];let html='<table><thead><tr>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'<th>إجراءات</th></tr></thead><tbody>';
-for(const r of data){html+='<tr>';for(const [k] of c.cols){let v=r[k];if(k==='shipment_id')v=await lookup('shipments',v);if(k==='broker_id')v=await lookup('customs_brokers',v);if(k==='beneficiary_id')v=await lookup('beneficiaries',v);if(k==='followup_responsible')v=await lookup('profiles',v);html+=`<td>${esc(labelFor(v))}</td>`}html+=`<td><div class="actions">${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`}
-html+='</tbody></table>';if(!data.length)html='<div class="empty">لا توجد سجلات حتى الآن</div>';$('tableHost').innerHTML=html;
-$('tableHost').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openForm(key,b.dataset.edit));$('tableHost').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteRow(key,b.dataset.del))}
-async function showPage(p){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===p));if(p==='dashboard'){page=p;$('pageTitle').textContent='لوحة التحكم';$('dashboardPage').style.display='block';$('listPage').style.display='none';$('addBtn').style.display='none';await dashboard()}else await renderTable(p)}
-async function dashboard(){const [s,e]=await Promise.all([db.from('shipments').select('id,direction,shipment_no,created_at',{count:'exact'}),db.from('shipment_expenses').select('amount_egp')]);if(s.error||e.error){toast((s.error||e.error).message);return}const all=s.data||[];$('sShipments').textContent=s.count??all.length;$('sIncoming').textContent=all.filter(x=>x.direction==='incoming').length;$('sOutgoing').textContent=all.filter(x=>x.direction==='outgoing').length;$('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});const recent=all.slice(0,8);$('recentShipments').innerHTML=recent.length?'<table><thead><tr><th>رقم الشحنة</th><th>الاتجاه</th><th>تاريخ التسجيل</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${esc(x.shipment_no)}</td><td>${esc(labelFor(x.direction))}</td><td>${esc(x.created_at?.slice(0,10))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">لا توجد شحنات مسجلة</div>'}
-async function optionsFor(type){let table,cols;if(type==='shipment'){table='shipments';cols=['id','shipment_no']}if(type==='broker'){table='customs_brokers';cols=['id','name']}if(type==='beneficiary'){table='beneficiaries';cols=['id','name']}if(type==='profile'){table='profiles';cols=['id','full_name']}let {data,error}=await db.from(table).select(cols.join(',')).limit(500);if(error)throw error;return data||[]}
-async function openForm(key,id=null){if(currentRole==='viewer')return;const c=config[key],record=id?rows.find(x=>x.id===id):{};editingId=id;$('modalTitle').textContent=(id?'تعديل ':'إضافة ')+c.title;let html='';
-for(const [name,label,type,opts] of c.fields){let val=record?.[name]??(name==='container_count'?1:name==='exchange_rate'?1:'');let control='';if(type==='select')control=`<select name="${name}">${opts.map(o=>`<option value="${esc(o)}" ${String(val)===o?'selected':''}>${esc(labelFor(o))}</option>`).join('')}</select>`;
-else if(['shipment','broker','beneficiary','profile'].includes(type)){let arr=await optionsFor(type);control=`<select name="${name}"><option value="">— اختر —</option>${arr.map(o=>{let v=o.id,t=o.shipment_no??o.name??o.full_name;return `<option value="${v}" ${val===v?'selected':''}>${esc(t)}</option>`}).join('')}</select>`}
-else if(type==='textarea')control=`<textarea name="${name}" rows="2">${esc(val)}</textarea>`;
-else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count'].includes(name)?'step="any"':''}>`;
-html+=`<div class="field ${type==='textarea'?'wide':''}"><label>${label}</label>${control}</div>`}
-$('formFields').innerHTML=html;$('editModal').classList.add('show')}
-async function saveRecord(ev){ev.preventDefault();const key=page,c=config[key];const obj=Object.fromEntries(new FormData(ev.target).entries());for(const [k,v] of Object.entries(obj)){if(v==='')obj[k]=null}if(key==='shipments'&&!editingId)obj.created_by=currentUser.id;if(key==='updates'&&!editingId)obj.created_by=currentUser.id;
-let q=editingId?db.from(c.table).update(obj).eq('id',editingId):db.from(c.table).insert(obj);const {error}=await q;if(error){toast(error.message);return}$('editModal').classList.remove('show');toast('تم حفظ البيانات بنجاح');await renderTable(key);if(key==='shipments')await dashboard()}
-async function deleteRow(key,id){if(!confirm('هل أنت متأكد من حذف هذا السجل؟'))return;const {error}=await db.from(config[key].table).delete().eq('id',id);if(error){toast(error.message);return}toast('تم الحذف');await renderTable(key)}
-$('loginForm').addEventListener('submit',async e=>{e.preventDefault();const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){toast(error.message);return}currentUser=data.user;try{await loadProfile()}catch(err){toast('تعذر تحميل صلاحيات الحساب: '+err.message);await db.auth.signOut();return}$('login').style.display='none';$('app').style.display='block';await dashboard()});
+
+async function renderTable(key){
+ page=key;
+ const c=config[key];
+ $('pageTitle').textContent=c.title;
+ $('listHeading').textContent=c.title;
+ $('dashboardPage').style.display='none';
+ $('reportsPage').style.display='none';
+ $('listPage').style.display='block';
+ $('addBtn').style.display=currentRole==='viewer'?'none':'';
+ const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
+ if(error){toast(error.message);return}
+ rows=data||[];
+ await drawRows(key,rows)
+}
+
+async function drawRows(key,data){
+ const c=config[key];
+ let html='<table><thead><tr>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'<th>إجراءات</th></tr></thead><tbody>';
+ for(const r of data){
+  html+='<tr>';
+  for(const [k] of c.cols){
+   let v=r[k];
+   if(k==='shipment_id')v=await lookup('shipments',v);
+   if(k==='broker_id')v=await lookup('customs_brokers',v);
+   if(k==='beneficiary_id')v=await lookup('beneficiaries',v);
+   if(k==='followup_responsible')v=await lookup('profiles',v);
+   html+=`<td>${esc(labelFor(v))}</td>`;
+  }
+  html+=`<td><div class="actions">${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`;
+ }
+ html+='</tbody></table>';
+ if(!data.length)html='<div class="empty">لا توجد سجلات حتى الآن</div>';
+ $('tableHost').innerHTML=html;
+ $('tableHost').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openForm(key,b.dataset.edit));
+ $('tableHost').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteRow(key,b.dataset.del))
+}
+
+async function showPage(p){
+ document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===p));
+ if(p==='dashboard'){
+  page=p;
+  $('pageTitle').textContent='لوحة التحكم';
+  $('dashboardPage').style.display='block';
+  $('listPage').style.display='none';
+  $('reportsPage').style.display='none';
+  $('addBtn').style.display='none';
+  await dashboard();
+ } else if(p==='reports'){
+  page=p;
+  $('pageTitle').textContent='التقارير والإكسيل';
+  $('dashboardPage').style.display='none';
+  $('listPage').style.display='none';
+  $('reportsPage').style.display='block';
+  $('addBtn').style.display='none';
+  await loadReportsData();
+ } else {
+  await renderTable(p);
+ }
+}
+
+async function loadReportsData(){
+ let query=db.from('shipments').select('*').order('created_at',{ascending:false});
+ const dir=document.getElementById('repFilterDirection').value;
+ const stat=document.getElementById('repFilterStatus').value;
+ if(dir) query=query.eq('direction',dir);
+ if(stat) query=query.eq('status',stat);
+ 
+ const {data,error}=await query;
+ if(error){toast(error.message);return;}
+ 
+ const list=data||[];
+ const tbody=document.getElementById('reportsTableBody');
+ tbody.innerHTML='';
+ 
+ let totalContainers=0;
+ list.forEach(item=>{
+  totalContainers+=Number(item.container_count||0);
+  tbody.innerHTML+=`
+   <tr>
+    <td>${esc(item.shipment_no||'-')}</td>
+    <td>${esc(labelFor(item.direction))}</td>
+    <td>${esc(item.acid_number||'-')}</td>
+    <td>${esc(item.supplier_name||'-')}</td>
+    <td>${esc(item.shipping_port||'-')}</td>
+    <td>${esc(item.arrival_port||'-')}</td>
+    <td>${Number(item.container_count||0)}</td>
+    <td>${esc(labelFor(item.status))}</td>
+   </tr>
+  `;
+ });
+ 
+ document.getElementById('repCount').innerText=list.length;
+ document.getElementById('repContainers').innerText=totalContainers;
+ window._lastReportData=list; // حفظ مؤقت للتصدير
+}
+
+function exportReportsToExcel(){
+ const table=document.getElementById('reportsTable');
+ if(!table) return;
+ const workbook=XLSX.utils.table_to_book(table,{sheet:"تقرير الشحنات"});
+ if(!workbook.Sheets["تقرير الشحنات"]['!views']) workbook.Sheets["تقرير الشحنات"]['!views']=[];
+ workbook.Sheets["تقرير الشحنات"]['!views'].push({RTL:true});
+ const today=new Date().toISOString().split('T')[0];
+ XLSX.writeFile(workbook,`تقرير_الشحنات_${today}.xlsx`);
+ toast('تم تصدير التقرير بنجاح!');
+}
+
+async function dashboard(){
+ const [s,e]=await Promise.all([db.from('shipments').select('id,direction,shipment_no,created_at',{count:'exact'}),db.from('shipment_expenses').select('amount_egp')]);
+ if(s.error||e.error){toast((s.error||e.error).message);return}
+ const all=s.data||[];
+ $('sShipments').textContent=s.count??all.length;
+ $('sIncoming').textContent=all.filter(x=>x.direction==='incoming').length;
+ $('sOutgoing').textContent=all.filter(x=>x.direction==='outgoing').length;
+ $('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});
+ const recent=all.slice(0,8);
+ $('recentShipments').innerHTML=recent.length?'<table><thead><tr><th>رقم الشحنة</th><th>الاتجاه</th><th>تاريخ التسجيل</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${esc(x.shipment_no)}</td><td>${esc(labelFor(x.direction))}</td><td>${esc(x.created_at?.slice(0,10))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">لا توجد شحنات مسجلة</div>';
+}
+
+async function optionsFor(type){
+ let table,cols;
+ if(type==='shipment'){table='shipments';cols=['id','shipment_no']}
+ if(type==='broker'){table='customs_brokers';cols=['id','name']}
+ if(type==='beneficiary'){table='beneficiaries';cols=['id','name']}
+ if(type==='profile'){table='profiles';cols=['id','full_name']}
+ let {data,error}=await db.from(table).select(cols.join(',')).limit(500);
+ if(error)throw error;
+ return data||[];
+}
+
+async function openForm(key,id=null){
+ if(currentRole==='viewer')return;
+ const c=config[key],record=id?rows.find(x=>x.id===id):{};
+ editingId=id;
+ $('modalTitle').textContent=(id?'تعديل ':'إضافة ')+c.title;
+ let html='';
+ for(const [name,label,type,opts] of c.fields){
+  let val=record?.[name]??(name==='container_count'?1:name==='exchange_rate'?1:'');
+  let control='';
+  if(type==='select')control=`<select name="${name}">${opts.map(o=>`<option value="${esc(o)}" ${String(val)===o?'selected':''}>${esc(labelFor(o))}</option>`).join('')}</select>`;
+  else if(['shipment','broker','beneficiary','profile'].includes(type)){
+   let arr=await optionsFor(type);
+   control=`<select name="${name}"><option value="">— اختر —</option>${arr.map(o=>{let v=o.id,t=o.shipment_no??o.name??o.full_name;return `<option value="${v}" ${val===v?'selected':''}>${esc(t)}</option>`}).join('')}</select>`;
+  }
+  else if(type==='textarea')control=`<textarea name="${name}" rows="2">${esc(val)}</textarea>`;
+  else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count'].includes(name)?'step="any"':''}>`;
+  html+=`<div class="field ${type==='textarea'?'wide':''}"><label>${label}</label>${control}</div>`;
+ }
+ $('formFields').innerHTML=html;
+ $('editModal').classList.add('show');
+}
+
+async function saveRecord(ev){
+ ev.preventDefault();
+ const key=page,c=config[key];
+ const obj=Object.fromEntries(new FormData(ev.target).entries());
+ for(const [k,v] of Object.entries(obj)){if(v==='')obj[k]=null}
+ if(key==='shipments'&&!editingId)obj.created_by=currentUser.id;
+ if(key==='updates'&&!editingId)obj.created_by=currentUser.id;
+ let q=editingId?db.from(c.table).update(obj).eq('id',editingId):db.from(c.table).insert(obj);
+ const {error}=await q;
+ if(error){toast(error.message);return}
+ $('editModal').classList.remove('show');
+ toast('تم حفظ البيانات بنجاح');
+ await renderTable(key);
+ if(key==='shipments')await dashboard();
+}
+
+async function deleteRow(key,id){
+ if(!confirm('هل أنت متأكد من حذف هذا السجل؟'))return;
+ const {error}=await db.from(config[key].table).delete().eq('id',id);
+ if(error){toast(error.message);return}
+ toast('تم الحذف');
+ await renderTable(key);
+}
+
+$('loginForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});
+ if(error){toast(error.message);return}
+ currentUser=data.user;
+ try{await loadProfile()}catch(err){toast('تعذر تحميل صلاحيات الحساب: '+err.message);await db.auth.signOut();return}
+ $('login').style.display='none';
+ $('app').style.display='block';
+ await dashboard();
+});
+
 $('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
 document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>showPage(n.dataset.page));
-$('addBtn').onclick=()=>openForm(page);$('closeModal').onclick=$('cancelModal').onclick=()=>$('editModal').classList.remove('show');$('recordForm').onsubmit=saveRecord;
-$('refreshBtn').onclick=()=>renderTable(page);$('searchInput').oninput=async e=>{const c=config[page],q=e.target.value.toLowerCase();const {data,error}=await db.from(c.table).select('*').limit(500);if(error)return;const filtered=(data||[]).filter(r=>Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));rows=data||[];await drawRows(page,filtered)};
-const {data:{session}}=await db.auth.getSession();if(session){currentUser=session.user;try{await loadProfile();$('login').style.display='none';$('app').style.display='block';await dashboard()}catch(e){await db.auth.signOut()}}
+$('addBtn').onclick=()=>openForm(page);
+$('closeModal').onclick=$('cancelModal').onclick=()=>$('editModal').classList.remove('show');
+$('recordForm').onsubmit=saveRecord;
+$('refreshBtn').onclick=()=>renderTable(page);
+$('searchInput').oninput=async e=>{
+ const c=config[page],q=e.target.value.toLowerCase();
+ const {data,error}=await db.from(c.table).select('*').limit(500);
+ if(error)return;
+ const filtered=(data||[]).filter(r=>Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));
+ rows=data||[];
+ await drawRows(page,filtered);
+};
+
+const {data:{session}}=await db.auth.getSession();
+if(session){
+ currentUser=session.user;
+ try{
+  await loadProfile();
+  $('login').style.display='none';
+  $('app').style.display='block';
+  await dashboard();
+ }catch(e){await db.auth.signOut()}
+}
 </script>
-</body></html>
-<!-- مكتبة تصدير الإكسيل SheetJS -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<a href="#" onclick="switchTab('reports-tab')" class="menu-item">
-  <span>📊</span>
-  <span>التقارير والإكسيل</span>
-</a>
-// دالة التبديل بين الأقسام (لو مش موجودة عندك)
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-    const target = document.getElementById(tabId);
-    if (target) target.style.display = 'block';
-}
-
-// دالة تصدير الجدول إلى Excel
-function exportTableToExcel() {
-    const table = document.getElementById('reportsTable');
-    if (!table) return;
-    
-    const workbook = XLSX.utils.table_to_book(table, { sheet: "التقارير" });
-    
-    // ضبط اتجاه الورقة من اليمين لليسار (RTL)
-    if (!workbook.Sheets["التقارير"]['!views']) workbook.Sheets["التقارير"]['!views'] = [];
-    workbook.Sheets["التقارير"]['!views'].push({ RTL: true });
-
-    // تحميل الملف
-    const today = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `تقرير_الشحنات_${today}.xlsx`);
-}
+</body>
+</html>

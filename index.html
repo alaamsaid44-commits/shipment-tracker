@@ -147,3 +147,25 @@ const {data:{session}}=await db.auth.getSession();if(session){currentUser=sessio
   <span>📊</span>
   <span>التقارير والإكسيل</span>
 </a>
+// دالة التبديل بين الأقسام (لو مش موجودة عندك)
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+}
+
+// دالة تصدير الجدول إلى Excel
+function exportTableToExcel() {
+    const table = document.getElementById('reportsTable');
+    if (!table) return;
+    
+    const workbook = XLSX.utils.table_to_book(table, { sheet: "التقارير" });
+    
+    // ضبط اتجاه الورقة من اليمين لليسار (RTL)
+    if (!workbook.Sheets["التقارير"]['!views']) workbook.Sheets["التقارير"]['!views'] = [];
+    workbook.Sheets["التقارير"]['!views'].push({ RTL: true });
+
+    // تحميل الملف
+    const today = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `تقرير_الشحنات_${today}.xlsx`);
+}

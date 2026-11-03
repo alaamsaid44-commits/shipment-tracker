@@ -53,7 +53,6 @@ td .actions{display:flex;gap:6px}
 .timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
 .timeline-step.completed .dot{background:var(--blue)}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;padding:8px}.side-title{display:none}.nav{min-width:max-content;width:auto}.main{padding:16px}}
-@media(max-width:520px){.topbar{padding:0 12px}.main{padding:12px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.pagehead{align-items:flex-start;flex-direction:column}}
 @media print{.topbar,.sidebar,.toolbar,.no-print,button,.actions{display:none!important}.layout{display:block}.main{padding:0}.panel,.stat{box-shadow:none;border:0}body{background:#fff}}
 </style>
 </head>
@@ -102,7 +101,6 @@ td .actions{display:flex;gap:6px}
     <div class="notice">نظام سحابي متكامل لإدارة ومتابعة الشحنات، التخليص الجمركي، والمصروفات الملحقة.</div>
    </section>
 
-   <!-- الشاشات الداخلية الرئيسية مع كروت ملخص الإحصائيات -->
    <section id="listPage" style="display:none">
     <div class="cards" id="screenSummaryCards"></div>
     <div class="panel">
@@ -114,7 +112,7 @@ td .actions{display:flex;gap:6px}
     </div>
    </section>
 
-   <!-- مركز التقارير الشامل لجميع الشاشات وتصدير الإكسيل -->
+   <!-- مركز التقارير الشامل المستقل لكل شاشة -->
    <section id="reportsPage" style="display:none">
     <div class="panel">
      <div class="panel-head">
@@ -124,10 +122,10 @@ td .actions{display:flex;gap:6px}
      
      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);">
       <div style="flex: 1; min-width: 250px;">
-       <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة / القسم للتقرير</label>
+       <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة المراد استخراج تقريرها</label>
        <select id="repTargetTable" onchange="loadReportsData()" style="padding: 10px;">
-        <option value="shipments">تقرير الشحنات التفصيلي</option>
-        <option value="expenses">تقرير المصروفات والرسوم المالية</option>
+        <option value="shipments">تقرير الشحنات</option>
+        <option value="expenses">تقرير المصروفات والرسوم</option>
         <option value="invoices">تقرير فواتير الموردين</option>
         <option value="brokers">تقرير مكاتب التخليص الجمركي</option>
         <option value="beneficiaries">تقرير المستفيدين والجهات</option>
@@ -203,8 +201,6 @@ async function renderTable(key){
  const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
  if(error){toast(error.message);return}
  rows=data||[];
- 
- // بناء كروت ملخص الإحصائيات للشاشة الحالية
  renderScreenSummary(key, rows);
  await drawRows(key,rows);
 }
@@ -212,26 +208,16 @@ async function renderTable(key){
 function renderScreenSummary(key, data){
  const cardsHost = $('screenSummaryCards');
  if(!data || !data.length){ cardsHost.innerHTML=''; return; }
- 
  if(key === 'shipments'){
   const total = data.length;
   const inc = data.filter(x=>x.direction==='incoming').length;
   const out = data.filter(x=>x.direction==='outgoing').length;
-  cardsHost.innerHTML = `
-   <div class="stat"><small>إجمالي الشحنات بالشاشة</small><strong>${total}</strong></div>
-   <div class="stat"><small>واردة</small><strong style="color:var(--teal)">${inc}</strong></div>
-   <div class="stat"><small>صادرة</small><strong style="color:var(--blue)">${out}</strong></div>
-  `;
+  cardsHost.innerHTML = `<div class="stat"><small>إجمالي الشحنات بالشاشة</small><strong>${total}</strong></div><div class="stat"><small>واردة</small><strong style="color:var(--teal)">${inc}</strong></div><div class="stat"><small>صادرة</small><strong style="color:var(--blue)">${out}</strong></div>`;
  } else if(key === 'expenses'){
   const totalAmount = data.reduce((sum, x) => sum + Number(x.amount_egp || 0), 0);
-  cardsHost.innerHTML = `
-   <div class="stat"><small>إجمالي عدد المصروفات</small><strong>${data.length}</strong></div>
-   <div class="stat"><small>إجمالي المبالغ المسجلة (جنيه)</small><strong style="color:var(--teal)">${totalAmount.toLocaleString()} ج.م</strong></div>
-  `;
+  cardsHost.innerHTML = `<div class="stat"><small>إجمالي عدد المصروفات</small><strong>${data.length}</strong></div><div class="stat"><small>إجمالي المبالغ المسجلة (جنيه)</small><strong style="color:var(--teal)">${totalAmount.toLocaleString()} ج.م</strong></div>`;
  } else {
-  cardsHost.innerHTML = `
-   <div class="stat"><small>إجمالي السجلات بالشاشة</small><strong>${data.length}</strong></div>
-  `;
+  cardsHost.innerHTML = `<div class="stat"><small>إجمالي السجلات بالشاشة</small><strong>${data.length}</strong></div>`;
  }
 }
 
@@ -302,6 +288,7 @@ async function showPage(p){
  }
 }
 
+// تحميل بيانات التقرير حسب القائمة المنسدلة المختارة بدقة
 async function loadReportsData(){
  const targetKey=$('repTargetTable').value;
  const c=config[targetKey];

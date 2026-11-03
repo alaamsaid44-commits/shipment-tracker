@@ -141,3 +141,5 @@ $('refreshBtn').onclick=()=>renderTable(page);$('searchInput').oninput=async e=>
 const {data:{session}}=await db.auth.getSession();if(session){currentUser=session.user;try{await loadProfile();$('login').style.display='none';$('app').style.display='block';await dashboard()}catch(e){await db.auth.signOut()}}
 </script>
 </body></html>
+<!-- مكتبة تصدير الإكسيل SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>

@@ -27,27 +27,33 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
 .nav{display:flex;align-items:center;gap:11px;width:100%;text-align:right;background:transparent;color:#d8e5f2;margin:3px 0;padding:11px 13px;border-radius:10px;font-weight:600}
 .nav.active,.nav:hover{background:#ffffff19;color:#fff}.nav span:first-child{width:22px;text-align:center}
 .main{padding:26px;min-width:0}.pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.pagehead h1{font-size:23px;margin:0;color:var(--navy)}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
 .stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 3px 12px #183b5b08}
-.stat small{color:var(--muted)}.stat strong{display:block;font-size:25px;color:var(--navy);margin-top:6px}
+.stat small{color:var(--muted);font-weight:600}.stat strong{display:block;font-size:24px;color:var(--navy);margin-top:6px}
 .panel{margin-bottom:18px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.panel h3{font-size:16px;margin:0;color:var(--navy)}
 .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.toolbar input{max-width:280px}
-.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:right;font-size:13px;white-space:nowrap}th{background:#f7f9fc;color:#60748b;font-weight:800}td .actions{display:flex;gap:5px}
-.pill{display:inline-block;border-radius:30px;padding:3px 9px;background:#eaf5f3;color:#087c6c;font-size:11px;font-weight:700}
-.empty{text-align:center;padding:34px;color:var(--muted)}
+.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;min-width:720px;background:#fff}
+th,td{padding:13px 14px;border-bottom:1px solid var(--line);text-align:right;font-size:13px;white-space:nowrap}
+th{background:#f8fafc;color:#475569;font-weight:700;border-bottom:2px solid var(--line)}
+tbody tr:nth-child(even){background-color:#fbfcfd}
+tbody tr:hover{background-color:#f1f5f9}
+td .actions{display:flex;gap:6px}
+.pill{display:inline-block;border-radius:30px;padding:4px 10px;background:#eaf5f3;color:#087c6c;font-size:12px;font-weight:700}
+.empty{text-align:center;padding:40px;color:var(--muted);font-weight:600}
 .modal{display:none;position:fixed;inset:0;background:#0b1d2f88;z-index:10;padding:20px;overflow:auto}.modal.show{display:grid;place-items:start center}
 .modal-box{width:min(850px,100%);background:#fff;border-radius:18px;padding:22px;margin:30px auto}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.form-grid .wide{grid-column:1/-1}
 .modal-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:18px}
-.notice{padding:11px 13px;border-radius:10px;background:#fff8e8;color:#8b5c11;font-size:12px;margin:12px 0}
+.notice{padding:12px 16px;border-radius:12px;background:#fff8e8;color:#8b5c11;font-size:13px;margin:12px 0;border-right:4px solid var(--gold)}
 #toast{position:fixed;bottom:20px;left:20px;background:#142b4a;color:#fff;padding:12px 18px;border-radius:12px;display:none;z-index:30;box-shadow:0 8px 30px #0002;max-width:min(500px,90vw)}
-.timeline{display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:10px;background:#f8fafc;border-radius:10px}
+.timeline{display:flex;justify-content:space-between;align-items:center;margin:4px 0;padding:6px 10px;background:#f8fafc;border-radius:10px}
 .timeline-step{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--muted);position:relative;flex:1}
-.timeline-step .dot{width:14px;height:14px;border-radius:50%;background:#cbd5e1;margin-bottom:4px;z-index:2}
+.timeline-step .dot{width:12px;height:12px;border-radius:50%;background:#cbd5e1;margin-bottom:3px;z-index:2}
 .timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
 .timeline-step.completed .dot{background:var(--blue)}
-@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;padding:8px}.side-title{display:none}.nav{min-width:max-content;width:auto}.cards{grid-template-columns:repeat(2,1fr)}.main{padding:16px}}
-@media(max-width:520px){.cards{grid-template-columns:1fr 1fr}.topbar{padding:0 12px}.main{padding:12px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.pagehead{align-items:flex-start;flex-direction:column}}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;padding:8px}.side-title{display:none}.nav{min-width:max-content;width:auto}.main{padding:16px}}
+@media(max-width:520px){.topbar{padding:0 12px}.main{padding:12px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.pagehead{align-items:flex-start;flex-direction:column}}
 @media print{.topbar,.sidebar,.toolbar,.no-print,button,.actions{display:none!important}.layout{display:block}.main{padding:0}.panel,.stat{box-shadow:none;border:0}body{background:#fff}}
 </style>
 </head>
@@ -64,6 +70,7 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
   <div class="muted" style="margin-top:16px">يتم إنشاء حسابات الموظفين من لوحة إدارة Supabase بواسطة المدير.</div>
  </div>
 </section>
+
 <div id="app">
  <header class="topbar">
   <div class="topbrand"><div class="brand-mark">↗</div><span>Shipment Management</span></div>
@@ -95,8 +102,16 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
     <div class="notice">نظام سحابي متكامل لإدارة ومتابعة الشحنات، التخليص الجمركي، والمصروفات الملحقة.</div>
    </section>
 
+   <!-- الشاشات الداخلية الرئيسية مع كروت ملخص الإحصائيات -->
    <section id="listPage" style="display:none">
-    <div class="panel"><div class="panel-head"><h3 id="listHeading">السجلات</h3><div class="toolbar"><input id="searchInput" placeholder="بحث في البيانات..."><button class="secondary" id="refreshBtn">تحديث</button></div></div><div class="table-wrap" id="tableHost"></div></div>
+    <div class="cards" id="screenSummaryCards"></div>
+    <div class="panel">
+     <div class="panel-head">
+      <h3 id="listHeading">السجلات</h3>
+      <div class="toolbar"><input id="searchInput" placeholder="بحث سريعة في البيانات..."><button class="secondary" id="refreshBtn">تحديث</button></div>
+     </div>
+     <div class="table-wrap" id="tableHost"></div>
+    </div>
    </section>
 
    <!-- مركز التقارير الشامل لجميع الشاشات وتصدير الإكسيل -->
@@ -107,16 +122,16 @@ input:focus,select:focus,textarea:focus{border-color:#4a90bd;box-shadow:0 0 0 3p
       <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تصدير التقرير المنسق (Excel)</button>
      </div>
      
-     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px;">
+     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);">
       <div style="flex: 1; min-width: 250px;">
-       <label style="font-size: 12px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 5px;">اختر الشاشة / القسم للتقرير</label>
-       <select id="repTargetTable" onchange="loadReportsData()" style="padding: 8px;">
-        <option value="shipments">تقرير الشحنات</option>
-        <option value="expenses">تقرير المصروفات والرسوم</option>
+       <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة / القسم للتقرير</label>
+       <select id="repTargetTable" onchange="loadReportsData()" style="padding: 10px;">
+        <option value="shipments">تقرير الشحنات التفصيلي</option>
+        <option value="expenses">تقرير المصروفات والرسوم المالية</option>
         <option value="invoices">تقرير فواتير الموردين</option>
-        <option value="brokers">تقرير مكاتب التخليص</option>
+        <option value="brokers">تقرير مكاتب التخليص الجمركي</option>
         <option value="beneficiaries">تقرير المستفيدين والجهات</option>
-        <option value="updates">تقرير سجل المتابعة</option>
+        <option value="updates">تقرير سجل المتابعة والعمليات</option>
        </select>
       </div>
      </div>
@@ -188,12 +203,41 @@ async function renderTable(key){
  const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
  if(error){toast(error.message);return}
  rows=data||[];
- await drawRows(key,rows)
+ 
+ // بناء كروت ملخص الإحصائيات للشاشة الحالية
+ renderScreenSummary(key, rows);
+ await drawRows(key,rows);
+}
+
+function renderScreenSummary(key, data){
+ const cardsHost = $('screenSummaryCards');
+ if(!data || !data.length){ cardsHost.innerHTML=''; return; }
+ 
+ if(key === 'shipments'){
+  const total = data.length;
+  const inc = data.filter(x=>x.direction==='incoming').length;
+  const out = data.filter(x=>x.direction==='outgoing').length;
+  cardsHost.innerHTML = `
+   <div class="stat"><small>إجمالي الشحنات بالشاشة</small><strong>${total}</strong></div>
+   <div class="stat"><small>واردة</small><strong style="color:var(--teal)">${inc}</strong></div>
+   <div class="stat"><small>صادرة</small><strong style="color:var(--blue)">${out}</strong></div>
+  `;
+ } else if(key === 'expenses'){
+  const totalAmount = data.reduce((sum, x) => sum + Number(x.amount_egp || 0), 0);
+  cardsHost.innerHTML = `
+   <div class="stat"><small>إجمالي عدد المصروفات</small><strong>${data.length}</strong></div>
+   <div class="stat"><small>إجمالي المبالغ المسجلة (جنيه)</small><strong style="color:var(--teal)">${totalAmount.toLocaleString()} ج.م</strong></div>
+  `;
+ } else {
+  cardsHost.innerHTML = `
+   <div class="stat"><small>إجمالي السجلات بالشاشة</small><strong>${data.length}</strong></div>
+  `;
+ }
 }
 
 async function drawRows(key,data){
  const c=config[key];
- let html='<table><thead><tr>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'<th>إجراءات</th></tr></thead><tbody>';
+ let html='<table><thead><tr>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'<th>إجراءات التحكم</th></tr></thead><tbody>';
  for(const r of data){
   html+='<tr>';
   for(const [k] of c.cols){
@@ -217,7 +261,7 @@ async function drawRows(key,data){
   html+=`<td><div class="actions">${extraBtns}${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`;
  }
  html+='</tbody></table>';
- if(!data.length)html='<div class="empty">لا توجد سجلات حتى الآن</div>';
+ if(!data.length)html='<div class="empty">لا توجد سجلات حتي الآن بهذه الشاشة</div>';
  $('tableHost').innerHTML=html;
  $('tableHost').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openForm(key,b.dataset.edit));
  $('tableHost').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteRow(key,b.dataset.del))
@@ -287,21 +331,16 @@ async function loadReportsData(){
  $('repCount').innerText=list.length;
 }
 
-// دالة التصدير الاحترافية المنسقة للشيتات
 window.exportReportsToExcel=function(){
  const table=document.getElementById('reportsTable');
  if(!table) return;
  const targetKey=$('repTargetTable').value;
  const titleName=config[targetKey].title;
  
- // تحويل الجدول لورقة عمل
  const worksheet=XLSX.utils.table_to_sheet(table);
- 
- // ضبط اتجاه الشيت من اليمين إلى اليسار (RTL)
  if(!worksheet['!views']) worksheet['!views']=[];
  worksheet['!views'].push({RTL:true});
  
- // حساب وتعديل عروض الأعمدة تلقائياً ليكون شيت الإكسيل منسقاً
  const range = XLSX.utils.decode_range(worksheet['!ref']);
  const colWidths = [];
  for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -318,7 +357,6 @@ window.exportReportsToExcel=function(){
  }
  worksheet['!cols'] = colWidths;
  
- // إنشاء المصنف وتنزيل الملف باسم التقرير والتاريخ
  const workbook=XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(workbook, worksheet, titleName.slice(0, 30));
  const today=new Date().toISOString().split('T')[0];
@@ -353,7 +391,7 @@ async function openForm(key,id=null){
  if(currentRole==='viewer')return;
  const c=config[key],record=id?rows.find(x=>x.id===id):{};
  editingId=id;
- $('modalTitle').textContent=(id?'تعديل ':'إضافة ')+c.title;
+ $('modalTitle').textContent=(id?'تعديل ':'إضافة ') + c.title;
  let html='';
  for(const [name,label,type,opts] of c.fields){
   let val=record?.[name]??(name==='container_count'?1:name==='exchange_rate'?1:'');

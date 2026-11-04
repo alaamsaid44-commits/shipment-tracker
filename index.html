@@ -60,13 +60,26 @@ td .actions{display:flex;gap:6px}
 <section id="login">
  <div class="login-card">
   <div class="brand"><div class="brand-mark">↗</div><div><h1>نظام متابعة الشحنات</h1><div class="muted">Shipment Management Cloud</div></div></div>
-  <h2 style="font-size:19px">تسجيل الدخول</h2><p class="muted">ادخل بحساب الموظف المسجل في النظام</p>
+  
+  <!-- عنوان النموذج (يتغير ديناميكياً بين تسجيل الدخول وإنشاء حساب) -->
+  <h2 id="authCardTitle" style="font-size:19px">تسجيل الدخول</h2>
+  <p id="authCardSub" class="muted">ادخل بحساب الموظف المسجل في النظام</p>
+  
   <form id="loginForm">
+   <div id="nameFieldContainer" class="field" style="display:none;">
+    <label>الاسم الكامل</label>
+    <input id="signupName" type="text" placeholder="اسمك الكريم">
+   </div>
    <div class="field"><label>البريد الإلكتروني</label><input id="email" type="email" required autocomplete="username" placeholder="name@company.com"></div>
    <div class="field"><label>كلمة المرور</label><input id="password" type="password" required autocomplete="current-password" placeholder="••••••••"></div>
-   <button class="primary" style="width:100%;margin-top:10px" type="submit">دخول إلى النظام</button>
+   
+   <button class="primary" style="width:100%;margin-top:10px" type="submit" id="authSubmitBtn">دخول إلى النظام</button>
   </form>
-  <div class="muted" style="margin-top:16px">يتم إنشاء حسابات الموظفين من لوحة إدارة Supabase بواسطة المدير.</div>
+
+  <!-- زر التبديل بين الدخول وإنشاء الحساب -->
+  <div style="text-align:center; margin-top:16px;">
+   <button type="button" class="ghost" id="toggleAuthModeBtn" style="font-size:13px; color:var(--blue);">ليس لديك حساب؟ إنشاء حساب جديد</button>
+  </div>
  </div>
 </section>
 
@@ -92,9 +105,7 @@ td .actions{display:flex;gap:6px}
     <h1 id="pageTitle">لوحة التحكم</h1>
     <div class="toolbar">
      <span class="muted" id="connectionState">متصل بقاعدة البيانات</span>
-     <!-- زر تحميل نموذج الإكسيلالفارغ -->
      <button id="downloadTemplateBtn" class="secondary" style="display:none; background:#e0f2fe; color:#0369a1;" onclick="downloadExcelTemplate()">📥 تحميل نموذج Excel</button>
-     <!-- زر استيراد شيت إكسيل للشاشة الحالية -->
      <label id="importExcelBtnWrap" class="secondary" style="display:none; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:700; background:#eaf1f8; color:var(--navy);">
       📂 استيراد من Excel <input type="file" id="importExcelFile" accept=".xlsx, .xls, .csv" style="display:none" onchange="importExcelData(event)">
      </label>
@@ -183,6 +194,7 @@ const SUPABASE_URL='https://dwcthmipuddkoteeipgx.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_tF26ap0lObQVo5UesJFP6Q_vpHKjW5d';
 const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
+let isSignUpMode = false; // متغير للتحكم في وضع تسجيل الدخول أم إنشاء حساب
 const $=id=>document.getElementById(id);
 
 const config={
@@ -237,7 +249,23 @@ function renderTimeline(status){
  }).join('')}</div>`;
 }
 
-async function loadProfile(){const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).single();if(error)throw error;currentRole=data.role;$('userLabel').textContent=data.full_name||currentUser.email;$('roleLabel').textContent=currentRole==='admin'?'مدير النظام':currentRole==='editor'?'موظف':'مشاهدة فقط';$('addBtn').style.display=currentRole==='viewer'?'none':''}
+async function loadProfile(){
+ const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).maybeSingle();
+ if(error)throw error;
+ // لو الحساب لسة جديد وموش مسجل في جدول profiles، ننشئ له بروفایل افتراضي بصلاحية مشاهدة أو موظف
+ if(!data){
+  await db.from('profiles').insert({id: currentUser.id, full_name: currentUser.email.split('@')[0], role: 'editor'});
+  currentRole = 'editor';
+  $('userLabel').textContent = currentUser.email;
+  $('roleLabel').textContent = 'موظف';
+ } else {
+  currentRole=data.role || 'editor';
+  $('userLabel').textContent=data.full_name||currentUser.email;
+  $('roleLabel').textContent=currentRole==='admin'?'مدير النظام':currentRole==='editor'?'موظف':'مشاهدة فقط';
+ }
+ $('addBtn').style.display=currentRole==='viewer'?'none':'';
+}
+
 async function lookup(table,id){if(!id)return '—';let {data}=await db.from(table).select('*').eq('id',id).maybeSingle();return data?(data.name||data.full_name||data.shipment_no||data.email||'—'):'—'}
 
 async function renderTable(key){
@@ -352,20 +380,15 @@ async function showPage(p){
  }
 }
 
-// دالة لتحميل نموذج إكسيل فارغ للشاشة الحالية
 window.downloadExcelTemplate = function(){
  const c = config[page];
  if(!c) return;
- 
- // استخراج أسماء الحقول الفعلية لقاعدة البيانات كعناوين للأعمدة
  const headers = c.fields.map(f => f[0]);
  const headerLabels = c.fields.map(f => f[1]);
- 
- const wsData = [headerLabels, headers]; // السطر الأول بالعربي، الثاني اسم الحقل البرمجي اختياري
+ const wsData = [headerLabels, headers];
  const worksheet = XLSX.utils.aoa_to_sheet(wsData);
  if(!worksheet['!views']) worksheet['!views']=[];
  worksheet['!views'].push({RTL:true});
- 
  const workbook = XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(workbook, worksheet, c.title.slice(0, 30));
  XLSX.writeFile(workbook, `نموذج_إدخال_${c.title}.xlsx`);
@@ -440,18 +463,13 @@ window.importExcelData = async function(event){
    const workbook = XLSX.read(data, {type: 'array'});
    const firstSheetName = workbook.SheetNames[0];
    const worksheet = workbook.Sheets[firstSheetName];
-   const json = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // قراءة كصفوف لتجاوز التسميات العربية واستخدام الحقول
-   
+   const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
    if(json.length < 2){ toast('ملف الإكسيل فارغ أو غير مطابق للنموذج!'); return; }
-   
-   const headers = json[1]; // السطر الثاني يحتوي على أسماء الحقول البرمجية
-   const rowsData = json.slice(2); // البيانات تبدأ من السطر الثالث
-   
+   const headers = json[1];
+   const rowsData = json.slice(2);
    if(!headers || !rowsData.length){ toast('الملف لا يحتوي على بيانات صالحة للاستيراد!'); return; }
-   
    toast('جاري رفع واستيراد البيانات...');
    const c = config[page];
-   
    let count = 0;
    for(const rowArr of rowsData){
     let cleanObj = {};
@@ -461,12 +479,10 @@ window.importExcelData = async function(event){
      }
     }
     if(Object.keys(cleanObj).length === 0) continue;
-    
     if(page==='shipments' && !cleanObj.created_by) cleanObj.created_by = currentUser.id;
     const {error} = await db.from(c.table).insert(cleanObj);
     if(!error) count++;
    }
-   
    toast(`تم استيراد ${count} سجل بنجاح!`);
    event.target.value = '';
    await renderTable(page);
@@ -530,24 +546,18 @@ async function saveRecord(ev){
  const key=page,c=config[key];
  const formElements = ev.target.elements;
  const obj = {};
- 
  toast('جاري حفظ البيانات ورفع المرفقات...');
- 
  for(const fieldConfig of c.fields){
   const name = fieldConfig[0];
   const type = fieldConfig[2];
   const el = formElements[name];
   if(!el) continue;
-  
   if(type === 'file'){
    const file = el.files[0];
    if(file){
     const fileName = `${Date.now()}_${file.name}`;
     const { data: uploadData, error: uploadError } = await db.storage.from('shipment-files').upload(fileName, file);
-    if(uploadError){
-     toast('خطأ في رفع الملف: ' + uploadError.message);
-     return;
-    }
+    if(uploadError){ toast('خطأ في رفع الملف: ' + uploadError.message); return; }
     const { data: publicUrlData } = db.storage.from('shipment-files').getPublicUrl(fileName);
     if(name === 'document_file') obj.document_url = publicUrlData.publicUrl;
     if(name === 'receipt_file') obj.receipt_url = publicUrlData.publicUrl;
@@ -564,14 +574,11 @@ async function saveRecord(ev){
    else obj[name] = null;
   }
  }
-
  if(key==='shipments'&&!editingId) obj.created_by = currentUser.id;
  if(key==='updates'&&!editingId) obj.created_by = currentUser.id;
-
  let q=editingId?db.from(c.table).update(obj).eq('id',editingId):db.from(c.table).insert(obj);
  const {error}=await q;
  if(error){toast(error.message);return}
- 
  $('editModal').classList.remove('show');
  toast('تم حفظ السجل والمستندات بنجاح!');
  await renderTable(key);
@@ -586,15 +593,76 @@ async function deleteRow(key,id){
  await renderTable(key);
 }
 
+// التحكم في زر التبديل بين تسجيل الدخول وإنشاء حساب جديد
+$('toggleAuthModeBtn').onclick = () => {
+ isSignUpMode = !isSignUpMode;
+ if(isSignUpMode){
+  $('authCardTitle').textContent = 'إنشاء حساب جديد';
+  $('authCardSub').textContent = 'سجل بياناتك لدخول النظام فوراً';
+  $('authSubmitBtn').textContent = 'تسجيل حساب جديد';
+  $('nameFieldContainer').style.display = 'flex';
+  $('toggleAuthModeBtn').textContent = 'لديك حساب بالفعل؟ تسجيل الدخول';
+ } else {
+  $('authCardTitle').textContent = 'تسجيل الدخول';
+  $('authCardSub').textContent = 'ادخل بحساب الموظف المسجل في النظام';
+  $('authSubmitBtn').textContent = 'دخول إلى النظام';
+  $('nameFieldContainer').style.display = 'none';
+  $('toggleAuthModeBtn').textContent = 'ليس لديك حساب؟ إنشاء حساب جديد';
+ }
+};
+
+// معالجة نموذج المصادقة (دخول أو إنشاء حساب)
 $('loginForm').addEventListener('submit',async e=>{
  e.preventDefault();
- const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});
- if(error){toast(error.message);return}
- currentUser=data.user;
- try{await loadProfile()}catch(err){toast('تعذر تحميل صلاحيات الحساب: '+err.message);await db.auth.signOut();return}
- $('login').style.display='none';
- $('app').style.display='block';
- await dashboard();
+ const email = $('email').value;
+ const password = $('password').value;
+ 
+ if(isSignUpMode){
+  // إنشاء حساب جديد
+  const fullName = $('signupName').value || email.split('@')[0];
+  const {data, error} = await db.auth.signUp({
+   email: email,
+   password: password,
+   options: { data: { full_name: fullName } }
+  });
+  if(error){ toast('خطأ في إنشاء الحساب: ' + error.message); return; }
+  
+  if(data.user){
+   // إضافة السجل في جدول profiles أيضاً
+   await db.from('profiles').insert({
+    id: data.user.id,
+    full_name: fullName,
+    role: 'editor' // صلاحية افتراضية كموظف
+   }).select();
+   
+   toast('تم إنشاء الحساب بنجاح! جاري تسجيل الدخول...');
+   currentUser = data.user;
+   try{
+    await loadProfile();
+    $('login').style.display='none';
+    $('app').style.display='block';
+    await dashboard();
+   }catch(err){
+    toast('تم إنشاء الحساب، يرجى تسجيل الدخول الآن.');
+    isSignUpMode = false;
+    $('toggleAuthModeBtn').click();
+   }
+  }
+ } else {
+  // تسجيل الدخول العادي
+  const {data,error}=await db.auth.signInWithPassword({email: email, password: password});
+  if(error){toast('خطأ في بيانات الدخول: ' + error.message);return}
+  currentUser=data.user;
+  try{
+   await loadProfile();
+   $('login').style.display='none';
+   $('app').style.display='block';
+   await dashboard();
+  }catch(err){
+   toast('تعذر تحميل صلاحيات الحساب: '+err.message);
+   await db.auth.signOut();
+  }
+ }
 });
 
 $('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};

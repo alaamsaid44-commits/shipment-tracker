@@ -53,30 +53,34 @@ td .actions{display:flex;gap:6px}
 .timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
 .timeline-step.completed .dot{background:var(--blue)}
 
-/* تنسيق حدود الطباعة واحترافية الورقة */
+/* تنسيق الطباعة لضمان احتواء كامل الورقة وعدم قطع البيانات */
 .print-header { display: none; }
 
 @media print{
- @page { size: A4 landscape; margin: 8mm; }
- body { background: #fff !important; color: #000 !important; font-size: 10px !important; font-family: 'Cairo', Arial, sans-serif !important; }
- .topbar, .sidebar, .toolbar, .no-print, button, .actions { display: none !important; }
+ @page { size: A4 landscape; margin: 5mm; }
+ body { background: #fff !important; color: #000 !important; font-size: 8.5px !important; font-family: 'Cairo', Arial, sans-serif !important; }
+ 
+ /* إخفاء كل عناصر التطبيق والقوائم والأزرار بالكامل */
+ .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable { display: none !important; }
  .layout { display: block !important; }
  .main { padding: 0 !important; width: 100% !important; margin: 0 !important; }
- .panel, .stat { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+ .panel { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: transparent !important; }
  
+ /* ترويسة التقرير المطبوع فقط */
  .print-header {
   display: block !important;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   border-bottom: 2px solid #142b4a;
-  padding-bottom: 6px;
+  padding-bottom: 4px;
  }
- .print-header h2 { margin: 0; color: #142b4a; font-size: 16px; font-weight: 800; }
- .print-header p { margin: 3px 0 0; color: #444; font-size: 11px; }
+ .print-header h2 { margin: 0; color: #142b4a; font-size: 14px; font-weight: 800; }
+ .print-header p { margin: 2px 0 0; color: #444; font-size: 9px; }
 
+ /* ضبط الجدول والأعمدة لتناسب عرض الصفحة تماماً دون اقتطاع */
  .table-wrap { border: none !important; overflow: visible !important; width: 100% !important; }
  table { width: 100% !important; border-collapse: collapse !important; background: #fff !important; table-layout: auto !important; }
- th, td { border: 1px solid #999 !important; padding: 5px 6px !important; color: #000 !important; font-size: 9.5px !important; white-space: normal !important; text-align: right !important; word-break: break-word; }
+ th, td { border: 1px solid #888 !important; padding: 3px 4px !important; color: #000 !important; font-size: 8px !important; white-space: normal !important; text-align: right !important; word-break: break-word; }
  th { background: #eaf1f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold !important; }
 }
 </style>
@@ -161,10 +165,10 @@ td .actions{display:flex;gap:6px}
 
    <section id="reportsPage" style="display:none">
     <div class="panel">
-     <!-- ترويسة الطباعة الرسمية بدون اسم الشركة -->
+     <!-- ترويسة الطباعة الرسمية للتقرير فقط -->
      <div class="print-header">
       <h2 id="printReportTitle">تقرير شامل</h2>
-      <p>تاريخ الاستخراج: <span id="printDate"></span> | نظام إدارة ومتابعة الشحنات</p>
+      <p>تاريخ الاستخراج: <span id="printDate"></span></p>
      </div>
 
      <div class="panel-head no-print">

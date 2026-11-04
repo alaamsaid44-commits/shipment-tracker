@@ -6,7 +6,7 @@
 <title>نظام متابعة الشحنات الاحترافي | Shipment Management Cloud</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- مكتبة تصدير الإكسيل SheetJS -->
+<!-- مكتبة تصدير وقراءة الإكسيل SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--navy:#142b4a;--blue:#235b91;--teal:#0f9d8a;--bg:#f3f6fa;--card:#fff;--ink:#1b2b40;--muted:#708198;--line:#e3eaf1;--red:#c64747;--gold:#b7791f;--green:#2e7d32}
@@ -88,7 +88,17 @@ td .actions{display:flex;gap:6px}
    <button class="nav" data-page="reports"><span>📊</span>تقارير الشاشات (Excel)</button>
   </aside>
   <main class="main">
-   <div class="pagehead"><h1 id="pageTitle">لوحة التحكم</h1><div class="toolbar"><span class="muted" id="connectionState">متصل بقاعدة البيانات</span><button class="primary" id="addBtn">＋ إضافة جديد</button></div></div>
+   <div class="pagehead">
+    <h1 id="pageTitle">لوحة التحكم</h1>
+    <div class="toolbar">
+     <span class="muted" id="connectionState">متصل بقاعدة البيانات</span>
+     <!-- زر استيراد شيت إكسيل للشاشة الحالية -->
+     <label id="importExcelBtnWrap" class="secondary" style="display:none; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:700; background:#eaf1f8; color:var(--navy);">
+      📂 استيراد من Excel <input type="file" id="importExcelFile" accept=".xlsx, .xls, .csv" style="display:none" onchange="importExcelData(event)">
+     </label>
+     <button class="primary" id="addBtn">＋ إضافة جديد</button>
+    </div>
+   </div>
    
    <section id="dashboardPage">
     <div class="cards">
@@ -98,7 +108,7 @@ td .actions{display:flex;gap:6px}
      <div class="stat"><small>إجمالي المصروفات (جنيه)</small><strong id="sExpenses">—</strong></div>
     </div>
     <div class="panel"><div class="panel-head"><h3>أحدث الشحنات المسجلة</h3><button class="secondary" onclick="showPage('shipments')">عرض قائمة الشحنات</button></div><div id="recentShipments"></div></div>
-    <div class="notice">نظام سحابي متكامل لإدارة ومتابعة الشحنات، التخليص الجمركي، والمصروفات الملحقة.</div>
+    <div class="notice">نظام سحابي متكامل لإدارة ومتابعة الشحنات، التخليص الجمركي، والمصروفات الملحقة مع دعم رفع المستندات واستيراد البيانات.</div>
    </section>
 
    <section id="listPage" style="display:none">
@@ -112,7 +122,6 @@ td .actions{display:flex;gap:6px}
     </div>
    </section>
 
-   <!-- مركز التقارير المستقل بدقة لكل شاشة -->
    <section id="reportsPage" style="display:none">
     <div class="panel">
      <div class="panel-head">
@@ -151,7 +160,19 @@ td .actions{display:flex;gap:6px}
  </div>
 </div>
 
-<div class="modal" id="editModal"><div class="modal-box"><div class="panel-head"><h3 id="modalTitle">إضافة سجل</h3><button class="ghost" id="closeModal">✕</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div class="modal-actions"><button class="primary" type="submit">حفظ البيانات</button><button class="secondary" type="button" id="cancelModal">إلغاء</button></div></form></div></div>
+<div class="modal" id="editModal">
+ <div class="modal-box">
+  <div class="panel-head"><h3 id="modalTitle">إضافة سجل</h3><button class="ghost" id="closeModal">✕</button></div>
+  <form id="recordForm">
+   <div id="formFields" class="form-grid"></div>
+   <div class="modal-actions">
+    <button class="primary" type="submit">حفظ البيانات</button>
+    <button class="secondary" type="button" id="cancelModal">إلغاء</button>
+   </div>
+  </form>
+ </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
@@ -162,25 +183,24 @@ const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
 const $=id=>document.getElementById(id);
 
-// تعريف الهياكل والأعمدة لكل شاشة بدقة متناهية
 const config={
  shipments:{
   title:'الشحنات',
   table:'shipments',
   cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','الحاويات'],['status','حالة الشحنة']],
-  fields:[['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_url','رابط المستند / بوليصة الشحن','text'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']]
+  fields:[['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_file','رفع بوليصة / مستند الشحنة (PDF/صورة)','file'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']]
  },
  expenses:{
   title:'المصروفات والرسوم',
   table:'shipment_expenses',
   cols:[['expense_date','تاريخ المصروف'],['shipment_id','الشحنة المرتبطة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['exchange_rate','سعر الصرف'],['amount_egp','القيمة بالجنيه']],
-  fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['receipt_url','رابط صورة الإيصال','text'],['notes','ملاحظات','textarea']]
+  fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['receipt_file','رفع صورة إيصال المصروف','file'],['notes','ملاحظات','textarea']]
  },
  invoices:{
   title:'فواتير الموردين',
   table:'supplier_invoices',
   cols:[['invoice_number','رقم الفاتورة'],['supplier_name','اسم المورد'],['invoice_date','تاريخ الفاتورة'],['shipment_id','رقم الشحنة'],['currency','العملة']],
-  fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر الصرف','number'],['notes','ملاحظات','textarea']]
+  fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر الصرف','number'],['invoice_file','رفع مستند الفاتورة','file'],['notes','ملاحظات','textarea']]
  },
  brokers:{
   title:'مكاتب التخليص الجمركي',
@@ -227,6 +247,14 @@ async function renderTable(key){
  $('reportsPage').style.display='none';
  $('listPage').style.display='block';
  $('addBtn').style.display=currentRole==='viewer'?'none':'';
+ 
+ // إظهار زر استيراد الإكسيل فقط للشحنات والمصروفات والفواتير ومكاتب التخليص
+ if(['shipments','expenses','invoices','brokers'].includes(key) && currentRole!=='viewer'){
+  $('importExcelBtnWrap').style.display='inline-block';
+ } else {
+  $('importExcelBtnWrap').style.display='none';
+ }
+
  const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
  if(error){toast(error.message);return}
  rows=data||[];
@@ -303,6 +331,7 @@ async function showPage(p){
   $('listPage').style.display='none';
   $('reportsPage').style.display='none';
   $('addBtn').style.display='none';
+  $('importExcelBtnWrap').style.display='none';
   await dashboard();
  } else if(p==='reports'){
   page=p;
@@ -311,61 +340,49 @@ async function showPage(p){
   $('listPage').style.display='none';
   $('reportsPage').style.display='block';
   $('addBtn').style.display='none';
+  $('importExcelBtnWrap').style.display='none';
   await loadReportsData();
  } else {
   await renderTable(p);
  }
 }
 
-// دالة جلب تقرير الشاشة المختارة وتفريغ وتحميل بياناتها الحقيقية بدقة
 async function loadReportsData(){
- const targetKey = $('repTargetTable').value;
- const c = config[targetKey];
- 
+ const targetKey=$('repTargetTable').value;
+ const c=config[targetKey];
  $('reportTitleHeading').textContent = `تقرير ${c.title} الشامل`;
-
- // جلب البيانات من جدول الشاشة المختارة في Supabase
- const { data, error } = await db.from(c.table).select('*').order('created_at', { ascending: false }).limit(500);
- if(error){ toast(error.message); return; }
- 
- const list = data || [];
- const headRow = $('reportsHeaderRow');
- const tbody = $('reportsTableBody');
- 
- // تفريغ الرأس والجدول أولاً لضمان عدم التعليق
- headRow.innerHTML = '';
- tbody.innerHTML = '';
- 
- // بناء الهيدر الخاص بالشاشة المختارة
- headRow.innerHTML = c.cols.map(col => `<th>${col[1]}</th>`).join('');
- 
- // بناء الصفوف الخاصة بالشاشة المختارة
+ const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
+ if(error){toast(error.message);return;}
+ const list=data||[];
+ const headRow=$('reportsHeaderRow');
+ const tbody=$('reportsTableBody');
+ headRow.innerHTML='';
+ tbody.innerHTML='';
+ headRow.innerHTML=c.cols.map(col=>`<th>${col[1]}</th>`).join('');
  for(const item of list){
-  let trHtml = '<tr>';
+  let trHtml='<tr>';
   for(const [k] of c.cols){
-   let v = item[k];
-   if(k==='shipment_id') v = await lookup('shipments', v);
-   if(k==='broker_id') v = await lookup('customs_brokers', v);
-   if(k==='beneficiary_id') v = await lookup('beneficiaries', v);
-   if(k==='followup_responsible') v = await lookup('profiles', v);
-   trHtml += `<td>${esc(labelFor(v))}</td>`;
+   let v=item[k];
+   if(k==='shipment_id')v=await lookup('shipments',v);
+   if(k==='broker_id')v=await lookup('customs_brokers',v);
+   if(k==='beneficiary_id')v=await lookup('beneficiaries',v);
+   if(k==='followup_responsible')v=await lookup('profiles',v);
+   trHtml+=`<td>${esc(labelFor(v))}</td>`;
   }
-  trHtml += '</tr>';
-  tbody.innerHTML += trHtml;
+  trHtml+='</tr>';
+  tbody.innerHTML+=trHtml;
  }
- $('repCount').innerText = list.length;
+ $('repCount').innerText=list.length;
 }
 
-window.exportReportsToExcel = function(){
- const table = document.getElementById('reportsTable');
+window.exportReportsToExcel=function(){
+ const table=document.getElementById('reportsTable');
  if(!table) return;
- const targetKey = $('repTargetTable').value;
- const titleName = config[targetKey].title;
- 
- const worksheet = XLSX.utils.table_to_sheet(table);
- if(!worksheet['!views']) worksheet['!views'] = [];
+ const targetKey=$('repTargetTable').value;
+ const titleName=config[targetKey].title;
+ const worksheet=XLSX.utils.table_to_sheet(table);
+ if(!worksheet['!views']) worksheet['!views']=[];
  worksheet['!views'].push({RTL:true});
- 
  const range = XLSX.utils.decode_range(worksheet['!ref']);
  const colWidths = [];
  for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -381,12 +398,52 @@ window.exportReportsToExcel = function(){
    colWidths.push({wch: maxLen + 4});
  }
  worksheet['!cols'] = colWidths;
- 
- const workbook = XLSX.utils.book_new();
+ const workbook=XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(workbook, worksheet, titleName.slice(0, 30));
- const today = new Date().toISOString().split('T')[0];
+ const today=new Date().toISOString().split('T')[0];
  XLSX.writeFile(workbook, `تقرير_${titleName}_${today}.xlsx`);
  toast(`تم تصدير تقرير ${titleName} بنجاح!`);
+}
+
+// دالة استيراد البيانات من شيت إكسيل إلى الشاشة الحالية
+window.importExcelData = async function(event){
+ const file = event.target.files[0];
+ if(!file) return;
+ const reader = new FileReader();
+ reader.onload = async function(e){
+  try {
+   const data = new Uint8Array(e.target.result);
+   const workbook = XLSX.read(data, {type: 'array'});
+   const firstSheetName = workbook.SheetNames[0];
+   const worksheet = workbook.Sheets[firstSheetName];
+   const json = XLSX.utils.sheet_to_json(worksheet);
+   
+   if(!json.length){ toast('ملف الإكسيل فارغ!'); return; }
+   
+   toast('جاري رفع واستيراد البيانات...');
+   const c = config[page];
+   
+   // رفع الصفوف تباعاً لقاعدة البيانات
+   let count = 0;
+   for(const row of json){
+    // تنظيف مفاتيح القيم ومطابقتها
+    let cleanObj = {};
+    for(const [k, v] of Object.entries(row)){
+     cleanObj[k] = v;
+    }
+    if(page==='shipments' && !cleanObj.created_by) cleanObj.created_by = currentUser.id;
+    const {error} = await db.from(c.table).insert(cleanObj);
+    if(!error) count++;
+   }
+   
+   toast(`تم استيراد ${count} سجل بنجاح!`);
+   event.target.value = ''; // تصفير الحقل
+   await renderTable(page);
+  } catch(err){
+   toast('خطأ في قراءة ملف الإكسيل: ' + err.message);
+  }
+ };
+ reader.readAsArrayBuffer(file);
 }
 
 async function dashboard(){
@@ -427,8 +484,11 @@ async function openForm(key,id=null){
    control=`<select name="${name}"><option value="">— اختر —</option>${arr.map(o=>{let v=o.id,t=o.shipment_no??o.name??o.full_name;return `<option value="${v}" ${val===v?'selected':''}>${esc(t)}</option>`}).join('')}</select>`;
   }
   else if(type==='textarea')control=`<textarea name="${name}" rows="2">${esc(val)}</textarea>`;
+  else if(type==='file'){
+   control=`<input name="${name}" type="file"><small class="muted" style="display:block;margin-top:4px">${val?`الملف الحالي مسجل: <a href="${val}" target="_blank">عرض المستند</a>`:'اختر ملفاً لرفعه على السحابة'}</small>`;
+  }
   else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count'].includes(name)?'step="any"':''}>`;
-  html+=`<div class="field ${type==='textarea'?'wide':''}"><label>${label}</label>${control}</div>`;
+  html+=`<div class="field ${type==='textarea'||type==='file'?'wide':''}"><label>${label}</label>${control}</div>`;
  }
  $('formFields').innerHTML=html;
  $('editModal').classList.add('show');
@@ -437,24 +497,64 @@ async function openForm(key,id=null){
 async function saveRecord(ev){
  ev.preventDefault();
  const key=page,c=config[key];
- const obj=Object.fromEntries(new FormData(ev.target).entries());
- for(const [k,v] of Object.entries(obj)){if(v==='')obj[k]=null}
- if(key==='shipments'&&!editingId)obj.created_by=currentUser.id;
- if(key==='updates'&&!editingId)obj.created_by=currentUser.id;
+ const formElements = ev.target.elements;
+ const obj = {};
+ 
+ toast('جاري حفظ البيانات ورفع المرفقات...');
+ 
+ for(const fieldConfig of c.fields){
+  const name = fieldConfig[0];
+  const type = fieldConfig[2];
+  const el = formElements[name];
+  if(!el) continue;
+  
+  if(type === 'file'){
+   const file = el.files[0];
+   if(file){
+    // رفع الملف إلى Supabase Storage bucket: shipment-files
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data: uploadData, error: uploadError } = await db.storage.from('shipment-files').upload(fileName, file);
+    if(uploadError){
+     toast('خطأ في رفع الملف: ' + uploadError.message);
+     return;
+    }
+    // جلب الرابط العام للملف
+    const { data: publicUrlData } = db.storage.from('shipment-files').getPublicUrl(fileName);
+    if(name === 'document_file') obj.document_url = publicUrlData.publicUrl;
+    if(name === 'receipt_file') obj.receipt_url = publicUrlData.publicUrl;
+    if(name === 'invoice_file') obj.document_url = publicUrlData.publicUrl;
+   } else if(editingId){
+    // الاحتفاظ بالرابط القديم إذا لم يتم اختيار ملف جديد
+    const oldRec = rows.find(x=>x.id===editingId);
+    if(oldRec && oldRec[name==='receipt_file'?'receipt_url':'document_url']){
+     if(name==='receipt_file') obj.receipt_url = oldRec.receipt_url;
+     else obj.document_url = oldRec.document_url;
+    }
+   }
+  } else {
+   if(el.value !== '') obj[name] = el.value;
+   else obj[name] = null;
+  }
+ }
+
+ if(key==='shipments'&&!editingId) obj.created_by = currentUser.id;
+ if(key==='updates'&&!editingId) obj.created_by = currentUser.id;
+
  let q=editingId?db.from(c.table).update(obj).eq('id',editingId):db.from(c.table).insert(obj);
  const {error}=await q;
  if(error){toast(error.message);return}
+ 
  $('editModal').classList.remove('show');
- toast('تم حفظ البيانات بنجاح');
+ toast('تم حفظ السجل والمستندات بنجاح!');
  await renderTable(key);
- if(key==='shipments')await dashboard();
+ if(key==='shipments') await dashboard();
 }
 
 async function deleteRow(key,id){
  if(!confirm('هل أنت متأكد من حذف هذا السجل؟'))return;
  const {error}=await db.from(config[key].table).delete().eq('id',id);
  if(error){toast(error.message);return}
- toast('تم الحذف');
+ toast('تم الحذف بنجاح');
  await renderTable(key);
 }
 
@@ -472,11 +572,9 @@ $('loginForm').addEventListener('submit',async e=>{
 $('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
 document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>showPage(n.dataset.page));
 $('addBtn').onclick=()=>openForm(page);
-$('closeModal').onclick=$('cancelModal').onclick=() => $('editModal').classList.remove('show');
+$('closeModal').onclick=$('cancelModal').onclick=()=>$('editModal').classList.remove('show');
 $('recordForm').onsubmit=saveRecord;
 $('refreshBtn').onclick=()=>renderTable(page);
-
-// ربط حدث التغيير للقائمة المنسدلة للتقارير فورياً
 $('repTargetTable').onchange = () => loadReportsData();
 
 $('searchInput').oninput=async e=>{

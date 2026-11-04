@@ -191,7 +191,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL='https://dwcthmipuddkoteeipgx.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_tF26ap0lObQVo5UesJFP6Q_vpHKjW5d';
 const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
+let currentUser=null,currentRole='editor',page='dashboard',rows=[],editingId=null;
 let isSignUpMode = false;
 const $=id=>document.getElementById(id);
 
@@ -200,7 +200,7 @@ const config={
   title:'الشحنات',
   table:'shipments',
   cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','الحاويات'],['status','حالة الشحنة']],
-  fields:[['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_file','رفع بوليصة / مستند الشحنة (PDF/صورة)','file'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']]
+  fields:[['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','beneficiary_select'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','select',['ميناء الإسكندرية','ميناء الدخيلة','ميناء دمياط','ميناء بورسعيد','ميناء السخنة','ميناء سفاجا','مطار القاهرة الدولي','أخرى']],['arrival_port','ميناء الوصول','select',['ميناء الإسكندرية','ميناء الدخيلة','ميناء دمياط','ميناء بورسعيد','ميناء السخنة','ميناء سفاجا','مطار القاهرة الدولي','المصنع','أخرى']],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','سماح مؤقت','دروباك','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_file','رفع بوليصة / مستند الشحنة (PDF/صورة)','file'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']]
  },
  expenses:{
   title:'المصروفات والرسوم',
@@ -211,8 +211,8 @@ const config={
  invoices:{
   title:'فواتير الموردين',
   table:'supplier_invoices',
-  cols:[['invoice_number','رقم الفاتورة'],['supplier_name','اسم المورد'],['invoice_date','تاريخ الفاتورة'],['shipment_id','رقم الشحنة'],['currency','العملة']],
-  fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر الصرف','number'],['invoice_file','رفع مستند الفاتورة','file'],['notes','ملاحظات','textarea']]
+  cols:[['invoice_number','رقم الفاتورة'],['supplier_name','اسم المورد'],['quantity','الكمية'],['invoice_date','تاريخ الفاتورة'],['shipment_id','رقم الشحنة'],['currency','العملة']],
+  fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','beneficiary_select'],['invoice_number','رقم الفاتورة','text'],['quantity','الكمية','number'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر الصرف','number'],['invoice_file','رفع مستند الفاتورة','file'],['notes','ملاحظات','textarea']]
  },
  brokers:{
   title:'مكاتب التخليص الجمركي',
@@ -330,7 +330,6 @@ async function drawRows(key,data){
    if(r.document_url) extraBtns+=`<a href="${esc(r.document_url)}" target="_blank" class="pill" style="text-decoration:none;margin-right:4px">📎 مستند</a>`;
   }
   
-  // زر التعديل يظهر لجميع الموظفين (Editor / Admin)، وزر الحذف يظهر فقط للأدمن (Admin)
   let editBtnHtml = currentRole !== 'viewer' ? `<button class="secondary" data-edit="${r.id}">تعديل</button>` : '';
   let deleteBtnHtml = currentRole === 'admin' ? `<button class="danger" data-del="${r.id}">حذف</button>` : '';
   
@@ -525,9 +524,13 @@ async function openForm(key,id=null){
  $('modalTitle').textContent=(id?'تعديل ':'إضافة ') + c.title;
  let html='';
  for(const [name,label,type,opts] of c.fields){
-  let val=record?.[name]??(name==='container_count'?1:name==='exchange_rate'?1:'');
+  let val=record?.[name]??(name==='container_count'?1:name==='exchange_rate'?1:name==='quantity'?1:'');
   let control='';
   if(type==='select')control=`<select name="${name}">${opts.map(o=>`<option value="${esc(o)}" ${String(val)===o?'selected':''}>${esc(labelFor(o))}</option>`).join('')}</select>`;
+  else if(type==='beneficiary_select'){
+   let {data: bens}=await db.from('beneficiaries').select('id,name').limit(500);
+   control=`<select name="${name}"><option value="">— اختر المورد —</option>${(bens||[]).map(b=>`<option value="${esc(b.name)}" ${val===b.name?'selected':''}>${esc(b.name)}</option>`).join('')}</select>`;
+  }
   else if(['shipment','broker','beneficiary','profile'].includes(type)){
    let arr=await optionsFor(type);
    control=`<select name="${name}"><option value="">— اختر —</option>${arr.map(o=>{let v=o.id,t=o.shipment_no??o.name??o.full_name;return `<option value="${v}" ${val===v?'selected':''}>${esc(t)}</option>`}).join('')}</select>`;
@@ -536,7 +539,7 @@ async function openForm(key,id=null){
   else if(type==='file'){
    control=`<input name="${name}" type="file"><small class="muted" style="display:block;margin-top:4px">${val?`الملف الحالي مسجل: <a href="${val}" target="_blank">عرض المستند</a>`:'اختر ملفاً لرفعه على السحابة'}</small>`;
   }
-  else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count'].includes(name)?'step="any"':''}>`;
+  else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count','quantity'].includes(name)?'step="any"':''}>`;
   html+=`<div class="field ${type==='textarea'||type==='file'?'wide':''}"><label>${label}</label>${control}</div>`;
  }
  $('formFields').innerHTML=html;

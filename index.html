@@ -92,6 +92,8 @@ td .actions{display:flex;gap:6px}
     <h1 id="pageTitle">لوحة التحكم</h1>
     <div class="toolbar">
      <span class="muted" id="connectionState">متصل بقاعدة البيانات</span>
+     <!-- زر تحميل نموذج الإكسيلالفارغ -->
+     <button id="downloadTemplateBtn" class="secondary" style="display:none; background:#e0f2fe; color:#0369a1;" onclick="downloadExcelTemplate()">📥 تحميل نموذج Excel</button>
      <!-- زر استيراد شيت إكسيل للشاشة الحالية -->
      <label id="importExcelBtnWrap" class="secondary" style="display:none; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:700; background:#eaf1f8; color:var(--navy);">
       📂 استيراد من Excel <input type="file" id="importExcelFile" accept=".xlsx, .xls, .csv" style="display:none" onchange="importExcelData(event)">
@@ -248,11 +250,12 @@ async function renderTable(key){
  $('listPage').style.display='block';
  $('addBtn').style.display=currentRole==='viewer'?'none':'';
  
- // إظهار زر استيراد الإكسيل فقط للشحنات والمصروفات والفواتير ومكاتب التخليص
- if(['shipments','expenses','invoices','brokers'].includes(key) && currentRole!=='viewer'){
+ if(['shipments','expenses','invoices','brokers','beneficiaries','updates'].includes(key) && currentRole!=='viewer'){
   $('importExcelBtnWrap').style.display='inline-block';
+  $('downloadTemplateBtn').style.display='inline-block';
  } else {
   $('importExcelBtnWrap').style.display='none';
+  $('downloadTemplateBtn').style.display='none';
  }
 
  const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
@@ -332,6 +335,7 @@ async function showPage(p){
   $('reportsPage').style.display='none';
   $('addBtn').style.display='none';
   $('importExcelBtnWrap').style.display='none';
+  $('downloadTemplateBtn').style.display='none';
   await dashboard();
  } else if(p==='reports'){
   page=p;
@@ -341,10 +345,31 @@ async function showPage(p){
   $('reportsPage').style.display='block';
   $('addBtn').style.display='none';
   $('importExcelBtnWrap').style.display='none';
+  $('downloadTemplateBtn').style.display='none';
   await loadReportsData();
  } else {
   await renderTable(p);
  }
+}
+
+// دالة لتحميل نموذج إكسيل فارغ للشاشة الحالية
+window.downloadExcelTemplate = function(){
+ const c = config[page];
+ if(!c) return;
+ 
+ // استخراج أسماء الحقول الفعلية لقاعدة البيانات كعناوين للأعمدة
+ const headers = c.fields.map(f => f[0]);
+ const headerLabels = c.fields.map(f => f[1]);
+ 
+ const wsData = [headerLabels, headers]; // السطر الأول بالعربي، الثاني اسم الحقل البرمجي اختياري
+ const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+ if(!worksheet['!views']) worksheet['!views']=[];
+ worksheet['!views'].push({RTL:true});
+ 
+ const workbook = XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(workbook, worksheet, c.title.slice(0, 30));
+ XLSX.writeFile(workbook, `نموذج_إدخال_${c.title}.xlsx`);
+ toast(`تم تحميل نموذج ${c.title} بنجاح!`);
 }
 
 async function loadReportsData(){
@@ -405,7 +430,6 @@ window.exportReportsToExcel=function(){
  toast(`تم تصدير تقرير ${titleName} بنجاح!`);
 }
 
-// دالة استيراد البيانات من شيت إكسيل إلى الشاشة الحالية
 window.importExcelData = async function(event){
  const file = event.target.files[0];
  if(!file) return;
@@ -416,28 +440,35 @@ window.importExcelData = async function(event){
    const workbook = XLSX.read(data, {type: 'array'});
    const firstSheetName = workbook.SheetNames[0];
    const worksheet = workbook.Sheets[firstSheetName];
-   const json = XLSX.utils.sheet_to_json(worksheet);
+   const json = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // قراءة كصفوف لتجاوز التسميات العربية واستخدام الحقول
    
-   if(!json.length){ toast('ملف الإكسيل فارغ!'); return; }
+   if(json.length < 2){ toast('ملف الإكسيل فارغ أو غير مطابق للنموذج!'); return; }
+   
+   const headers = json[1]; // السطر الثاني يحتوي على أسماء الحقول البرمجية
+   const rowsData = json.slice(2); // البيانات تبدأ من السطر الثالث
+   
+   if(!headers || !rowsData.length){ toast('الملف لا يحتوي على بيانات صالحة للاستيراد!'); return; }
    
    toast('جاري رفع واستيراد البيانات...');
    const c = config[page];
    
-   // رفع الصفوف تباعاً لقاعدة البيانات
    let count = 0;
-   for(const row of json){
-    // تنظيف مفاتيح القيم ومطابقتها
+   for(const rowArr of rowsData){
     let cleanObj = {};
-    for(const [k, v] of Object.entries(row)){
-     cleanObj[k] = v;
+    for(let i=0; i<headers.length; i++){
+     if(headers[i] && rowArr[i] !== undefined){
+      cleanObj[headers[i]] = rowArr[i];
+     }
     }
+    if(Object.keys(cleanObj).length === 0) continue;
+    
     if(page==='shipments' && !cleanObj.created_by) cleanObj.created_by = currentUser.id;
     const {error} = await db.from(c.table).insert(cleanObj);
     if(!error) count++;
    }
    
    toast(`تم استيراد ${count} سجل بنجاح!`);
-   event.target.value = ''; // تصفير الحقل
+   event.target.value = '';
    await renderTable(page);
   } catch(err){
    toast('خطأ في قراءة ملف الإكسيل: ' + err.message);
@@ -511,20 +542,17 @@ async function saveRecord(ev){
   if(type === 'file'){
    const file = el.files[0];
    if(file){
-    // رفع الملف إلى Supabase Storage bucket: shipment-files
     const fileName = `${Date.now()}_${file.name}`;
     const { data: uploadData, error: uploadError } = await db.storage.from('shipment-files').upload(fileName, file);
     if(uploadError){
      toast('خطأ في رفع الملف: ' + uploadError.message);
      return;
     }
-    // جلب الرابط العام للملف
     const { data: publicUrlData } = db.storage.from('shipment-files').getPublicUrl(fileName);
     if(name === 'document_file') obj.document_url = publicUrlData.publicUrl;
     if(name === 'receipt_file') obj.receipt_url = publicUrlData.publicUrl;
     if(name === 'invoice_file') obj.document_url = publicUrlData.publicUrl;
    } else if(editingId){
-    // الاحتفاظ بالرابط القديم إذا لم يتم اختيار ملف جديد
     const oldRec = rows.find(x=>x.id===editingId);
     if(oldRec && oldRec[name==='receipt_file'?'receipt_url':'document_url']){
      if(name==='receipt_file') obj.receipt_url = oldRec.receipt_url;

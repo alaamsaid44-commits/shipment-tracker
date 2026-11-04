@@ -61,7 +61,6 @@ td .actions{display:flex;gap:6px}
  <div class="login-card">
   <div class="brand"><div class="brand-mark">↗</div><div><h1>نظام متابعة الشحنات</h1><div class="muted">Shipment Management Cloud</div></div></div>
   
-  <!-- عنوان النموذج (يتغير ديناميكياً بين تسجيل الدخول وإنشاء حساب) -->
   <h2 id="authCardTitle" style="font-size:19px">تسجيل الدخول</h2>
   <p id="authCardSub" class="muted">ادخل بحساب الموظف المسجل في النظام</p>
   
@@ -76,7 +75,6 @@ td .actions{display:flex;gap:6px}
    <button class="primary" style="width:100%;margin-top:10px" type="submit" id="authSubmitBtn">دخول إلى النظام</button>
   </form>
 
-  <!-- زر التبديل بين الدخول وإنشاء الحساب -->
   <div style="text-align:center; margin-top:16px;">
    <button type="button" class="ghost" id="toggleAuthModeBtn" style="font-size:13px; color:var(--blue);">ليس لديك حساب؟ إنشاء حساب جديد</button>
   </div>
@@ -194,7 +192,7 @@ const SUPABASE_URL='https://dwcthmipuddkoteeipgx.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_tF26ap0lObQVo5UesJFP6Q_vpHKjW5d';
 const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
-let isSignUpMode = false; // متغير للتحكم في وضع تسجيل الدخول أم إنشاء حساب
+let isSignUpMode = false;
 const $=id=>document.getElementById(id);
 
 const config={
@@ -252,7 +250,6 @@ function renderTimeline(status){
 async function loadProfile(){
  const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).maybeSingle();
  if(error)throw error;
- // لو الحساب لسة جديد وموش مسجل في جدول profiles، ننشئ له بروفایل افتراضي بصلاحية مشاهدة أو موظف
  if(!data){
   await db.from('profiles').insert({id: currentUser.id, full_name: currentUser.email.split('@')[0], role: 'editor'});
   currentRole = 'editor';
@@ -332,7 +329,12 @@ async function drawRows(key,data){
    extraBtns+=`<button class="secondary" onclick="printManifest('${r.id}')" title="طباعة بوليصة">📄</button>`;
    if(r.document_url) extraBtns+=`<a href="${esc(r.document_url)}" target="_blank" class="pill" style="text-decoration:none;margin-right:4px">📎 مستند</a>`;
   }
-  html+=`<td><div class="actions">${extraBtns}${currentRole!=='viewer'?`<button class="secondary" data-edit="${r.id}">تعديل</button><button class="danger" data-del="${r.id}">حذف</button>`:'—'}</div></td></tr>`;
+  
+  // زر التعديل يظهر لجميع الموظفين (Editor / Admin)، وزر الحذف يظهر فقط للأدمن (Admin)
+  let editBtnHtml = currentRole !== 'viewer' ? `<button class="secondary" data-edit="${r.id}">تعديل</button>` : '';
+  let deleteBtnHtml = currentRole === 'admin' ? `<button class="danger" data-del="${r.id}">حذف</button>` : '';
+  
+  html+=`<td><div class="actions">${extraBtns}${editBtnHtml}${deleteBtnHtml}${(!editBtnHtml && !deleteBtnHtml)?'—':''}</div></td></tr>`;
  }
  html+='</tbody></table>';
  if(!data.length)html='<div class="empty">لا توجد سجلات حتي الآن بهذه الشاشة</div>';
@@ -586,6 +588,10 @@ async function saveRecord(ev){
 }
 
 async function deleteRow(key,id){
+ if(currentRole !== 'admin'){
+  toast('عذراً، صلاحية الحذف متاحة فقط لمدير النظام!');
+  return;
+ }
  if(!confirm('هل أنت متأكد من حذف هذا السجل؟'))return;
  const {error}=await db.from(config[key].table).delete().eq('id',id);
  if(error){toast(error.message);return}
@@ -593,7 +599,6 @@ async function deleteRow(key,id){
  await renderTable(key);
 }
 
-// التحكم في زر التبديل بين تسجيل الدخول وإنشاء حساب جديد
 $('toggleAuthModeBtn').onclick = () => {
  isSignUpMode = !isSignUpMode;
  if(isSignUpMode){
@@ -611,14 +616,12 @@ $('toggleAuthModeBtn').onclick = () => {
  }
 };
 
-// معالجة نموذج المصادقة (دخول أو إنشاء حساب)
 $('loginForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const email = $('email').value;
  const password = $('password').value;
  
  if(isSignUpMode){
-  // إنشاء حساب جديد
   const fullName = $('signupName').value || email.split('@')[0];
   const {data, error} = await db.auth.signUp({
    email: email,
@@ -628,11 +631,10 @@ $('loginForm').addEventListener('submit',async e=>{
   if(error){ toast('خطأ في إنشاء الحساب: ' + error.message); return; }
   
   if(data.user){
-   // إضافة السجل في جدول profiles أيضاً
    await db.from('profiles').insert({
     id: data.user.id,
     full_name: fullName,
-    role: 'editor' // صلاحية افتراضية كموظف
+    role: 'editor'
    }).select();
    
    toast('تم إنشاء الحساب بنجاح! جاري تسجيل الدخول...');
@@ -649,7 +651,6 @@ $('loginForm').addEventListener('submit',async e=>{
    }
   }
  } else {
-  // تسجيل الدخول العادي
   const {data,error}=await db.auth.signInWithPassword({email: email, password: password});
   if(error){toast('خطأ في بيانات الدخول: ' + error.message);return}
   currentUser=data.user;

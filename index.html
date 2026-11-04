@@ -53,15 +53,19 @@ td .actions{display:flex;gap:6px}
 .timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
 .timeline-step.completed .dot{background:var(--blue)}
 
-/* تنسيق الطباعة لضمان احتواء كامل الورقة وعدم قطع البيانات */
+/* تنسيق الطباعة وإخفاء القائمة الجانبية والشاشات والتحكم بالكامل */
 .print-header { display: none; }
 
 @media print{
  @page { size: A4 landscape; margin: 5mm; }
  body { background: #fff !important; color: #000 !important; font-size: 8.5px !important; font-family: 'Cairo', Arial, sans-serif !important; }
  
- /* إخفاء كل عناصر التطبيق والقوائم والأزرار بالكامل */
- .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable { display: none !important; }
+ /* إخفاء القائمة الجانبية، الأزرار، شريط العنوان، وكل ما يتعلق بتقارير الشاشات الشاملة غير الجدول المطلوب طباعته */
+ .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable, [data-page="reports"] { display: none !important; }
+ 
+ /* التأكد من إظهار جدول التقرير المراد طباعته فقط وترويسته */
+ #reportsPage { display: block !important; }
+ 
  .layout { display: block !important; }
  .main { padding: 0 !important; width: 100% !important; margin: 0 !important; }
  .panel { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: transparent !important; }

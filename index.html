@@ -53,39 +53,39 @@ td .actions{display:flex;gap:6px}
 .timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
 .timeline-step.completed .dot{background:var(--blue)}
 
-/* تنسيق الطباعة وإخفاء القائمة الجانبية والشاشات والتحكم بالكامل */
+/* تنسيق الطباعة المحترف والمضبوط تماماً */
 .print-header { display: none; }
 
 @media print{
- @page { size: A4 landscape; margin: 5mm; }
- body { background: #fff !important; color: #000 !important; font-size: 8.5px !important; font-family: 'Cairo', Arial, sans-serif !important; }
+ @page { size: A4 landscape; margin: 6mm; }
+ body { background: #fff !important; color: #000 !important; font-size: 9px !important; font-family: 'Cairo', Arial, sans-serif !important; }
  
- /* إخفاء القائمة الجانبية، الأزرار، شريط العنوان، وكل ما يتعلق بتقارير الشاشات الشاملة غير الجدول المطلوب طباعته */
- .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable, [data-page="reports"] { display: none !important; }
+ /* إخفاء الأزرار، القائمة، شريط العنوان، وكل العناصر غير المرغوبة بالكامل */
+ .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable, .pagehead, #pageTitle { display: none !important; }
  
- /* التأكد من إظهار جدول التقرير المراد طباعته فقط وترويسته */
+ /* إظهار قسم التقارير وترويسته الخاصة فقط */
  #reportsPage { display: block !important; }
  
  .layout { display: block !important; }
  .main { padding: 0 !important; width: 100% !important; margin: 0 !important; }
  .panel { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: transparent !important; }
  
- /* ترويسة التقرير المطبوع فقط */
+ /* ترويسة التقرير المطبوع */
  .print-header {
   display: block !important;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   border-bottom: 2px solid #142b4a;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
  }
- .print-header h2 { margin: 0; color: #142b4a; font-size: 14px; font-weight: 800; }
- .print-header p { margin: 2px 0 0; color: #444; font-size: 9px; }
+ .print-header h2 { margin: 0; color: #142b4a; font-size: 16px; font-weight: 800; }
+ .print-header p { margin: 3px 0 0; color: #555; font-size: 10px; }
 
- /* ضبط الجدول والأعمدة لتناسب عرض الصفحة تماماً دون اقتطاع */
+ /* ضبط الجدول ليملأ عرض الورقة بالكامل بدون أي فراغات أو اقتطاع */
  .table-wrap { border: none !important; overflow: visible !important; width: 100% !important; }
- table { width: 100% !important; border-collapse: collapse !important; background: #fff !important; table-layout: auto !important; }
- th, td { border: 1px solid #888 !important; padding: 3px 4px !important; color: #000 !important; font-size: 8px !important; white-space: normal !important; text-align: right !important; word-break: break-word; }
- th { background: #eaf1f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold !important; }
+ table { width: 100% !important; border-collapse: collapse !important; background: #fff !important; table-layout: fixed !important; }
+ th, td { border: 1px solid #777 !important; padding: 5px 4px !important; color: #000 !important; font-size: 8.5px !important; white-space: normal !important; text-align: center !important; word-break: break-word; overflow: hidden; }
+ th { background: #eaf1f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold !important; font-size: 9px !important; }
 }
 </style>
 </head>

@@ -112,11 +112,11 @@ td .actions{display:flex;gap:6px}
     </div>
    </section>
 
-   <!-- مركز التقارير الشامل المستقل لكل شاشة -->
+   <!-- مركز التقارير الشامل والمستقل لكل شاشة -->
    <section id="reportsPage" style="display:none">
     <div class="panel">
      <div class="panel-head">
-      <h3>مركز التقارير والتحويل إلى Excel الاحترافي</h3>
+      <h3 id="reportTitleHeading">تقرير الشحنات التفصيلي</h3>
       <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تصدير التقرير المنسق (Excel)</button>
      </div>
      
@@ -162,15 +162,44 @@ const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
 const $=id=>document.getElementById(id);
 
+// تعريف الحقول والأعمدة الخاصة بكل جدول على حدة بدقة
 const config={
- shipments:{title:'الشحنات',table:'shipments',cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','الحاويات'],['status','مرحلة التتبع']],fields:[
- ['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_url','رابط المستند / بوليصة الشحن','text'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']],
+ shipments:{
+  title:'الشحنات',
+  table:'shipments',
+  cols:[['shipment_no','رقم الشحنة'],['direction','الاتجاه'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','الحاويات'],['status','حالة الشحنة']],
+  fields:[['direction','اتجاه الشحنة','select',['incoming','outgoing']],['supplier_name','اسم المورد','text'],['shipment_description','وصف الشحنة','text'],['shipping_port','ميناء الشحن','text'],['arrival_port','ميناء الوصول','text'],['shipping_line','خط الملاحة','text'],['vessel_name','اسم السفينة','text'],['voyage_no','رقم الرحلة','text'],['container_count','عدد الحاويات','number'],['container_type','نوع الحاوية','select',['20 قدم','40 قدم','40 قدم High Cube','مبردة','أخرى']],['acid_number','رقم ACID','text'],['customs_declaration_no','رقم البيان الجمركي','text'],['broker_id','مكتب التخليص','broker'],['expected_arrival_date','تاريخ الوصول المتوقع','date'],['actual_arrival_date','تاريخ الوصول الفعلي','date'],['port_exit_date','تاريخ خروج البضاعة من الميناء','date'],['factory_arrival_date','تاريخ وصول المصنع','date'],['release_type','نوع الإفراج','select',['نهائي','مؤقت','ترانزيت','إفراج جزئي','أخرى']],['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],['document_url','رابط المستند / بوليصة الشحن','text'],['followup_responsible','مسؤول المتابعة','profile'],['notes','ملاحظات وتفاصيل إضافية','textarea']]
  },
- expenses:{title:'المصروفات والرسوم',table:'shipment_expenses',cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['amount_egp','القيمة بالجنيه']],fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['receipt_url','رابط صورة الإيصال','text'],['notes','ملاحظات','textarea']]},
- invoices:{title:'فواتير الموردين',table:'supplier_invoices',cols:[['invoice_number','رقم الفاتورة'],['supplier_name','المورد'],['invoice_date','التاريخ'],['shipment_id','الشحنة'],['currency','العملة']],fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date']]},
- brokers:{title:'مكاتب التخليص',table:'customs_brokers',cols:[['name','اسم المكتب'],['contact_person','مسؤول التواصل'],['phone','الهاتف'],['email','البريد الإلكتروني']],fields:[['name','اسم المكتب','text'],['contact_person','مسؤول التواصل','text'],['phone','الهاتف','text'],['email','البريد الإلكتروني','email'],['address','العنوان','text'],['notes','ملاحظات','textarea']]},
- beneficiaries:{title:'المستفيدون والجهات',table:'beneficiaries',cols:[['name','اسم الجهة'],['entity_type','نوع الجهة'],['phone','الهاتف']],fields:[['name','اسم الجهة','text'],['entity_type','نوع الجهة','select',['مورد','مكتب تخليص','جهة حكومية','شركة نقل','ميناء','أخرى']],['phone','الهاتف','text'],['notes','ملاحظات','textarea']]},
- updates:{title:'سجل المتابعة',table:'shipment_updates',cols:[['update_date','تاريخ المتابعة'],['shipment_id','الشحنة'],['update_type','نوع الإجراء'],['description','تفاصيل الإجراء']],fields:[['shipment_id','الشحنة','shipment'],['update_date','تاريخ ووقت المتابعة','datetime-local'],['update_type','نوع الإجراء','select',['مستندات','شحن','وصول','جمارك','إفراج','نقل','استلام مصنع','أخرى']],['description','تفاصيل الإجراء','textarea']]}
+ expenses:{
+  title:'المصروفات والرسوم',
+  table:'shipment_expenses',
+  cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['amount_egp','القيمة بالجنيه']],
+  fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['receipt_url','رابط صورة الإيصال','text'],['notes','ملاحظات','textarea']]
+ },
+ invoices:{
+  title:'فواتير الموردين',
+  table:'supplier_invoices',
+  cols:[['invoice_number','رقم الفاتورة'],['supplier_name','المورد'],['invoice_date','التاريخ'],['shipment_id','الشحنة'],['currency','العملة']],
+  fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر الصرف','number'],['notes','ملاحظات','textarea']]
+ },
+ brokers:{
+  title:'مكاتب التخليص الجمركي',
+  table:'customs_brokers',
+  cols:[['name','اسم المكتب'],['contact_person','مسؤول التواصل'],['phone','الهاتف'],['email','البريد الإلكتروني'],['address','العنوان']],
+  fields:[['name','اسم المكتب','text'],['contact_person','مسؤول التواصل','text'],['phone','الهاتف','text'],['email','البريد الإلكتروني','email'],['address','العنوان','text'],['notes','ملاحظات','textarea']]
+ },
+ beneficiaries:{
+  title:'المستفيدون والجهات',
+  table:'beneficiaries',
+  cols:[['name','اسم الجهة'],['entity_type','نوع الجهة'],['phone','الهاتف'],['notes','ملاحظات']],
+  fields:[['name','اسم الجهة','text'],['entity_type','نوع الجهة','select',['مورد','مكتب تخليص','جهة حكومية','شركة نقل','ميناء','أخرى']],['phone','الهاتف','text'],['notes','ملاحظات','textarea']]
+ },
+ updates:{
+  title:'سجل المتابعة والعمليات',
+  table:'shipment_updates',
+  cols:[['update_date','تاريخ المتابعة'],['shipment_id','الشحنة'],['update_type','نوع الإجراء'],['description','تفاصيل الإجراء']],
+  fields:[['shipment_id','الشحنة','shipment'],['update_date','تاريخ ووقت المتابعة','datetime-local'],['update_type','نوع الإجراء','select',['مستندات','شحن','وصول','جمارك','إفراج','نقل','استلام مصنع','أخرى']],['description','تفاصيل الإجراء','textarea']]
+ }
 };
 
 function toast(msg){$('toast').textContent=msg;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',4000)}
@@ -288,10 +317,13 @@ async function showPage(p){
  }
 }
 
-// تحميل بيانات التقرير حسب القائمة المنسدلة المختارة بدقة
+// تحميل البيانات والأعمدة الصحيحة 100% لكل شاشة في مركز التقارير
 async function loadReportsData(){
  const targetKey=$('repTargetTable').value;
  const c=config[targetKey];
+ 
+ $('reportTitleHeading').textContent = `تقرير ${c.title} الشامل`;
+
  const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
  if(error){toast(error.message);return;}
  
@@ -299,6 +331,7 @@ async function loadReportsData(){
  const headRow=$('reportsHeaderRow');
  const tbody=$('reportsTableBody');
  
+ // بناء رؤوس الأعمدة المتوافقة تماماً مع الجدول المختار
  headRow.innerHTML=c.cols.map(col=>`<th>${col[1]}</th>`).join('');
  tbody.innerHTML='';
  
@@ -348,7 +381,7 @@ window.exportReportsToExcel=function(){
  XLSX.utils.book_append_sheet(workbook, worksheet, titleName.slice(0, 30));
  const today=new Date().toISOString().split('T')[0];
  XLSX.writeFile(workbook, `تقرير_${titleName}_${today}.xlsx`);
- toast('تم تصدير ملف الإكسيل المنسق بنجاح!');
+ toast(`تم تصدير تقربر ${titleName} بنجاح!`);
 }
 
 async function dashboard(){
@@ -434,7 +467,7 @@ $('loginForm').addEventListener('submit',async e=>{
 $('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
 document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>showPage(n.dataset.page));
 $('addBtn').onclick=()=>openForm(page);
-$('closeModal').onclick=$('cancelModal').onclick=()=>$('editModal').classList.remove('show');
+$('closeModal').onclick=$('cancelModal').onclick=() => $('editModal').classList.remove('show');
 $('recordForm').onsubmit=saveRecord;
 $('refreshBtn').onclick=()=>renderTable(page);
 $('searchInput').oninput=async e=>{

@@ -52,15 +52,33 @@ td .actions{display:flex;gap:6px}
 .timeline-step .dot{width:12px;height:12px;border-radius:50%;background:#cbd5e1;margin-bottom:3px;z-index:2}
 .timeline-step.active .dot{background:var(--teal);box-shadow:0 0 0 3px #0f9d8a33}
 .timeline-step.completed .dot{background:var(--blue)}
-@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;padding:8px}.side-title{display:none}.nav{min-width:max-content;width:auto}.main{padding:16px}}
+
+/* تنسيق ترويسة الطباعة المخفية في الشاشة وتظهر عند الطباعة فقط */
+.print-header { display: none; }
+
 @media print{
- .topbar,.sidebar,.toolbar,.no-print,button,.actions{display:none!important}
- .layout{display:block}
- .main{padding:0}
- .panel,.stat{box-shadow:none;border:0}
- body{background:#fff}
- #reportsTable th{background:#eee!important;color:#000!important;border:1px solid #000}
- #reportsTable td{border:1px solid #ccc}
+ @page { size: A4 landscape; margin: 10mm; }
+ .topbar, .sidebar, .toolbar, .no-print, button, .actions { display: none !important; }
+ .layout { display: block !important; }
+ .main { padding: 0 !important; width: 100% !important; margin: 0 !important; }
+ .panel, .stat { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+ body { background: #fff !important; color: #000 !important; font-size: 12px !important; }
+ 
+ /* إظهار الترويسة الرسمية للتقرير عند الطباعة */
+ .print-header {
+  display: block !important;
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #142b4a;
+  padding-bottom: 10px;
+ }
+ .print-header h2 { margin: 0; color: #142b4a; font-size: 20px; font-weight: 800; }
+ .print-header p { margin: 5px 0 0; color: #555; font-size: 13px; }
+
+ .table-wrap { border: none !important; overflow: visible !important; }
+ table { width: 100% !important; border-collapse: collapse !important; background: #fff !important; }
+ th, td { border: 1px solid #bbb !important; padding: 8px 10px !important; color: #000 !important; font-size: 11px !important; }
+ th { background: #eaf1f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
 </head>
@@ -144,15 +162,21 @@ td .actions{display:flex;gap:6px}
 
    <section id="reportsPage" style="display:none">
     <div class="panel">
-     <div class="panel-head">
+     <!-- ترويسة الطباعة الرسمية (تظهر عند الطباعة فقط) -->
+     <div class="print-header">
+      <h2 id="printReportTitle">تقرير نظام متابعة الشحنات</h2>
+      <p>تاريخ الاستخراج: <span id="printDate"></span> | جهة الإصدار: إدارة دعم الصادرات والتخليص الجمركي</p>
+     </div>
+
+     <div class="panel-head no-print">
       <h3 id="reportTitleHeading">تقرير تفصيلي</h3>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-       <button onclick="window.print()" class="secondary" style="background-color: #142b4a; color: #fff;">🖨️ طباعة التقرير مباشرة</button>
+       <button onclick="triggerPrintReport()" class="secondary" style="background-color: #142b4a; color: #fff;">🖨️ طباعة التقرير مباشرة</button>
        <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تصدير التقرير (Excel)</button>
       </div>
      </div>
      
-     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);">
+     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);" class="no-print">
       <div style="flex: 1; min-width: 250px;">
        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة المراد استخراج تقريرها</label>
        <select id="repTargetTable" style="padding: 10px;">
@@ -419,6 +443,9 @@ async function loadReportsData(){
  const targetKey=$('repTargetTable').value;
  const c=config[targetKey];
  $('reportTitleHeading').textContent = `تقرير ${c.title} الشامل`;
+ $('printReportTitle').textContent = `تقرير ${c.title} الشامل - شركة الأمل الشريف`;
+ $('printDate').textContent = new Date().toLocaleDateString('ar-EG');
+ 
  const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
  if(error){toast(error.message);return;}
  const list=data||[];
@@ -441,6 +468,10 @@ async function loadReportsData(){
   tbody.innerHTML+=trHtml;
  }
  $('repCount').innerText=list.length;
+}
+
+window.triggerPrintReport = function(){
+ window.print();
 }
 
 window.exportReportsToExcel=function(){

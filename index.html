@@ -106,24 +106,24 @@ td .actions{display:flex;gap:6px}
     <div class="panel">
      <div class="panel-head">
       <h3 id="listHeading">السجلات</h3>
-      <div class="toolbar"><input id="searchInput" placeholder="بحث سريعة في البيانات..."><button class="secondary" id="refreshBtn">تحديث</button></div>
+      <div class="toolbar"><input id="searchInput" placeholder="بحث سريع في البيانات..."><button class="secondary" id="refreshBtn">تحديث</button></div>
      </div>
      <div class="table-wrap" id="tableHost"></div>
     </div>
    </section>
 
-   <!-- مركز التقارير الشامل والمستقل لكل شاشة -->
+   <!-- مركز التقارير المستقل بدقة لكل شاشة -->
    <section id="reportsPage" style="display:none">
     <div class="panel">
      <div class="panel-head">
-      <h3 id="reportTitleHeading">تقرير الشحنات التفصيلي</h3>
+      <h3 id="reportTitleHeading">تقرير تفصيلي</h3>
       <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تصدير التقرير المنسق (Excel)</button>
      </div>
      
      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);">
       <div style="flex: 1; min-width: 250px;">
        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة المراد استخراج تقريرها</label>
-       <select id="repTargetTable" onchange="loadReportsData()" style="padding: 10px;">
+       <select id="repTargetTable" style="padding: 10px;">
         <option value="shipments">تقرير الشحنات</option>
         <option value="expenses">تقرير المصروفات والرسوم</option>
         <option value="invoices">تقرير فواتير الموردين</option>
@@ -135,7 +135,7 @@ td .actions{display:flex;gap:6px}
      </div>
 
      <div class="cards" style="margin-bottom: 20px;">
-      <div class="stat"><small>إجمالي عدد السجلات في التقرير</small><strong id="repCount">0</strong></div>
+      <div class="stat"><small>إجمالي عدد السجلات في هذا التقرير</small><strong id="repCount">0</strong></div>
      </div>
 
      <div class="table-wrap">
@@ -162,7 +162,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let currentUser=null,currentRole='viewer',page='dashboard',rows=[],editingId=null;
 const $=id=>document.getElementById(id);
 
-// تعريف الحقول والأعمدة الخاصة بكل جدول على حدة بدقة
+// تعريف الهياكل والأعمدة لكل شاشة بدقة متناهية
 const config={
  shipments:{
   title:'الشحنات',
@@ -173,31 +173,31 @@ const config={
  expenses:{
   title:'المصروفات والرسوم',
   table:'shipment_expenses',
-  cols:[['expense_date','التاريخ'],['shipment_id','الشحنة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['amount_egp','القيمة بالجنيه']],
+  cols:[['expense_date','تاريخ المصروف'],['shipment_id','الشحنة المرتبطة'],['expense_type','بند المصروف'],['currency','العملة'],['amount','المبلغ'],['exchange_rate','سعر الصرف'],['amount_egp','القيمة بالجنيه']],
   fields:[['shipment_id','الشحنة','shipment'],['expense_date','التاريخ','date'],['expense_type','بند المصروف','select',['رسوم جمركية','ضريبة قيمة مضافة','أتعاب تخليص','أرضيات وتخزين','نقل','مناولة','شحن','تأمين','فحص ومعاينة','مصروفات بنكية','أخرى']],['beneficiary_id','الجهة المستفيدة','beneficiary'],['currency','العملة','select',['EGP','USD']],['amount','المبلغ','number'],['exchange_rate','سعر تحويل الدولار للجنيه','number'],['receipt_no','رقم الإيصال','text'],['receipt_url','رابط صورة الإيصال','text'],['notes','ملاحظات','textarea']]
  },
  invoices:{
   title:'فواتير الموردين',
   table:'supplier_invoices',
-  cols:[['invoice_number','رقم الفاتورة'],['supplier_name','المورد'],['invoice_date','التاريخ'],['shipment_id','الشحنة'],['currency','العملة']],
+  cols:[['invoice_number','رقم الفاتورة'],['supplier_name','اسم المورد'],['invoice_date','تاريخ الفاتورة'],['shipment_id','رقم الشحنة'],['currency','العملة']],
   fields:[['shipment_id','الشحنة','shipment'],['supplier_name','اسم المورد','text'],['invoice_number','رقم الفاتورة','text'],['invoice_date','تاريخ الفاتورة','date'],['currency','العملة','select',['EGP','USD']],['exchange_rate','سعر الصرف','number'],['notes','ملاحظات','textarea']]
  },
  brokers:{
   title:'مكاتب التخليص الجمركي',
   table:'customs_brokers',
-  cols:[['name','اسم المكتب'],['contact_person','مسؤول التواصل'],['phone','الهاتف'],['email','البريد الإلكتروني'],['address','العنوان']],
+  cols:[['name','اسم المكتب'],['contact_person','مسؤول التواصل'],['phone','رقم الهاتف'],['email','البريد الإلكتروني'],['address','العنوان']],
   fields:[['name','اسم المكتب','text'],['contact_person','مسؤول التواصل','text'],['phone','الهاتف','text'],['email','البريد الإلكتروني','email'],['address','العنوان','text'],['notes','ملاحظات','textarea']]
  },
  beneficiaries:{
   title:'المستفيدون والجهات',
   table:'beneficiaries',
-  cols:[['name','اسم الجهة'],['entity_type','نوع الجهة'],['phone','الهاتف'],['notes','ملاحظات']],
+  cols:[['name','اسم الجهة / الشركة'],['entity_type','نوع الجهة'],['phone','الهاتف'],['notes','ملاحظات']],
   fields:[['name','اسم الجهة','text'],['entity_type','نوع الجهة','select',['مورد','مكتب تخليص','جهة حكومية','شركة نقل','ميناء','أخرى']],['phone','الهاتف','text'],['notes','ملاحظات','textarea']]
  },
  updates:{
   title:'سجل المتابعة والعمليات',
   table:'shipment_updates',
-  cols:[['update_date','تاريخ المتابعة'],['shipment_id','الشحنة'],['update_type','نوع الإجراء'],['description','تفاصيل الإجراء']],
+  cols:[['update_date','تاريخ الإجراء'],['shipment_id','الشحنة'],['update_type','نوع الإجراء'],['description','تفاصيل المتابعة']],
   fields:[['shipment_id','الشحنة','shipment'],['update_date','تاريخ ووقت المتابعة','datetime-local'],['update_type','نوع الإجراء','select',['مستندات','شحن','وصول','جمارك','إفراج','نقل','استلام مصنع','أخرى']],['description','تفاصيل الإجراء','textarea']]
  }
 };
@@ -317,48 +317,53 @@ async function showPage(p){
  }
 }
 
-// تحميل البيانات والأعمدة الصحيحة 100% لكل شاشة في مركز التقارير
+// دالة جلب تقرير الشاشة المختارة وتفريغ وتحميل بياناتها الحقيقية بدقة
 async function loadReportsData(){
- const targetKey=$('repTargetTable').value;
- const c=config[targetKey];
+ const targetKey = $('repTargetTable').value;
+ const c = config[targetKey];
  
  $('reportTitleHeading').textContent = `تقرير ${c.title} الشامل`;
 
- const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
- if(error){toast(error.message);return;}
+ // جلب البيانات من جدول الشاشة المختارة في Supabase
+ const { data, error } = await db.from(c.table).select('*').order('created_at', { ascending: false }).limit(500);
+ if(error){ toast(error.message); return; }
  
- const list=data||[];
- const headRow=$('reportsHeaderRow');
- const tbody=$('reportsTableBody');
+ const list = data || [];
+ const headRow = $('reportsHeaderRow');
+ const tbody = $('reportsTableBody');
  
- // بناء رؤوس الأعمدة المتوافقة تماماً مع الجدول المختار
- headRow.innerHTML=c.cols.map(col=>`<th>${col[1]}</th>`).join('');
- tbody.innerHTML='';
+ // تفريغ الرأس والجدول أولاً لضمان عدم التعليق
+ headRow.innerHTML = '';
+ tbody.innerHTML = '';
  
+ // بناء الهيدر الخاص بالشاشة المختارة
+ headRow.innerHTML = c.cols.map(col => `<th>${col[1]}</th>`).join('');
+ 
+ // بناء الصفوف الخاصة بالشاشة المختارة
  for(const item of list){
-  let trHtml='<tr>';
+  let trHtml = '<tr>';
   for(const [k] of c.cols){
-   let v=item[k];
-   if(k==='shipment_id')v=await lookup('shipments',v);
-   if(k==='broker_id')v=await lookup('customs_brokers',v);
-   if(k==='beneficiary_id')v=await lookup('beneficiaries',v);
-   if(k==='followup_responsible')v=await lookup('profiles',v);
-   trHtml+=`<td>${esc(labelFor(v))}</td>`;
+   let v = item[k];
+   if(k==='shipment_id') v = await lookup('shipments', v);
+   if(k==='broker_id') v = await lookup('customs_brokers', v);
+   if(k==='beneficiary_id') v = await lookup('beneficiaries', v);
+   if(k==='followup_responsible') v = await lookup('profiles', v);
+   trHtml += `<td>${esc(labelFor(v))}</td>`;
   }
-  trHtml+='</tr>';
-  tbody.innerHTML+=trHtml;
+  trHtml += '</tr>';
+  tbody.innerHTML += trHtml;
  }
- $('repCount').innerText=list.length;
+ $('repCount').innerText = list.length;
 }
 
-window.exportReportsToExcel=function(){
- const table=document.getElementById('reportsTable');
+window.exportReportsToExcel = function(){
+ const table = document.getElementById('reportsTable');
  if(!table) return;
- const targetKey=$('repTargetTable').value;
- const titleName=config[targetKey].title;
+ const targetKey = $('repTargetTable').value;
+ const titleName = config[targetKey].title;
  
- const worksheet=XLSX.utils.table_to_sheet(table);
- if(!worksheet['!views']) worksheet['!views']=[];
+ const worksheet = XLSX.utils.table_to_sheet(table);
+ if(!worksheet['!views']) worksheet['!views'] = [];
  worksheet['!views'].push({RTL:true});
  
  const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -377,11 +382,11 @@ window.exportReportsToExcel=function(){
  }
  worksheet['!cols'] = colWidths;
  
- const workbook=XLSX.utils.book_new();
+ const workbook = XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(workbook, worksheet, titleName.slice(0, 30));
- const today=new Date().toISOString().split('T')[0];
+ const today = new Date().toISOString().split('T')[0];
  XLSX.writeFile(workbook, `تقرير_${titleName}_${today}.xlsx`);
- toast(`تم تصدير تقربر ${titleName} بنجاح!`);
+ toast(`تم تصدير تقرير ${titleName} بنجاح!`);
 }
 
 async function dashboard(){
@@ -470,6 +475,10 @@ $('addBtn').onclick=()=>openForm(page);
 $('closeModal').onclick=$('cancelModal').onclick=() => $('editModal').classList.remove('show');
 $('recordForm').onsubmit=saveRecord;
 $('refreshBtn').onclick=()=>renderTable(page);
+
+// ربط حدث التغيير للقائمة المنسدلة للتقارير فورياً
+$('repTargetTable').onchange = () => loadReportsData();
+
 $('searchInput').oninput=async e=>{
  const c=config[page],q=e.target.value.toLowerCase();
  const {data,error}=await db.from(c.table).select('*').limit(500);

@@ -221,7 +221,7 @@ const config={
  shipments:{
   title:'الشحنات',
   table:'shipments',
-  cols:[['shipment_no','رقم الشحنة'],['order_no','أمر التوريد (Order No)'],['direction','الاتجاه'],['bank_name','البنك'],['lc_no','رقم الاعتماد/التحصيل'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipment_description','وصف الشحنة / الصنف'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['arrival_date','تاريخ الوصول'],['container_count','عدد الحاويات / الكمية'],['container_type','نوع الحاوية'],['pallets_count','عدد البالتات/الكراتين'],['weight','الوزن'],['grace_days','أيام السماح'],['penalty_start_date','بدء الغرامة'],['release_type','نوع الإفراج'],['guarantee_type','نوع الضمان'],['guarantee_duration','مدة الضمان'],['guarantee_expiry_date','تاريخ انتهاء الضمان'],['broker_id','مكتب التخليص'],['status','الحالة'],['notes','ملاحظات']],
+  cols:[['shipment_no','رقم الشحنة'],['order_no','أمر التوريد (Order No)'],['direction','الاتجاه'],['bank_name','البنك'],['lc_no','رقم الاعتماد/التحصيل'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipment_description','وصف الشحنة / الصنف'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['arrival_date','تاريخ الوصول'],['container_count','عدد الحاويات / الكمية'],['container_type','نوع الحاوية'],['pallets_count','عدد البالتات/الكراتين'],['weight','الوزن'],['grace_days','أيام السماح'],['penalty_start_date','بدء الغرامة'],['release_type','نوع الإفراج'],['guarantee_type','نوع الضمان'],['guarantee_duration','مدة الضمان (أيام)'],['guarantee_expiry_date','تاريخ انتهاء الضمان'],['broker_id','مكتب التخليص'],['status','الحالة'],['notes','ملاحظات']],
   fields:[
    ['shipment_no','رقم الشهادة / الشحنة','text'],
    ['order_no','رقم أمر التوريد (Order No)','text'],
@@ -242,8 +242,8 @@ const config={
    ['penalty_start_date','تاريخ بدء الغرامة (تلقائي)','date'],
    ['release_type','نوع الإفراج','select',['سماح مؤقت','نهائي','دروب','منطقة حرة','تحفظ جمركي','أخرى']],
    ['guarantee_type','نوع الضمان','select',['بنكي','نقدي','تعهد','أخرى']],
-   ['guarantee_duration','مدة الضمان','text'],
-   ['guarantee_expiry_date','تاريخ انتهاء الضمان','date'],
+   ['guarantee_duration','مدة الضمان (بالأيام)','number'],
+   ['guarantee_expiry_date','تاريخ انتهاء الضمان (تلقائي)','date'],
    ['broker_id','مكتب التخليص','broker'],
    ['status','حالة الشحنة والتتبع','select',['new','in_progress','on_the_way','waiting_for_shipping','at_port','waiting_for_inspection','waiting_for_security_approvals','waiting_for_documents_from_bank','released','delivered','closed']],
    ['document_file','رفع بوليصة / مستند الشحنة','file'],
@@ -579,31 +579,51 @@ async function optionsFor(type){
  return data||[];
 }
 
-function setupAutoPenaltyDate(){
+function setupAutoCalculations(){
  const arrDateInput = document.querySelector('input[name="arrival_date"]');
  const graceDaysInput = document.querySelector('input[name="grace_days"]');
  const penaltyDateInput = document.querySelector('input[name="penalty_start_date"]');
  
- if(!arrDateInput || !graceDaysInput || !penaltyDateInput) return;
-
- const calculatePenaltyDate = () => {
-  const arrDateVal = arrDateInput.value;
-  const graceDaysVal = parseInt(graceDaysInput.value) || 0;
-  
-  if(arrDateVal){
-   const d = new Date(arrDateVal);
-   if(!isNaN(d.getTime())){
-    d.setDate(d.getDate() + graceDaysVal);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    penaltyDateInput.value = `${year}-${month}-${day}`;
+ const guaranteeDurationInput = document.querySelector('input[name="guarantee_duration"]');
+ const guaranteeExpiryInput = document.querySelector('input[name="guarantee_expiry_date"]');
+ 
+ if(arrDateInput && graceDaysInput && penaltyDateInput){
+  const calculatePenaltyDate = () => {
+   const arrDateVal = arrDateInput.value;
+   const graceDaysVal = parseInt(graceDaysInput.value) || 0;
+   if(arrDateVal){
+    const d = new Date(arrDateVal);
+    if(!isNaN(d.getTime())){
+     d.setDate(d.getDate() + graceDaysVal);
+     const year = d.getFullYear();
+     const month = String(d.getMonth() + 1).padStart(2, '0');
+     const day = String(d.getDate()).padStart(2, '0');
+     penaltyDateInput.value = `${year}-${month}-${day}`;
+    }
    }
-  }
- };
+  };
+  arrDateInput.addEventListener('input', calculatePenaltyDate);
+  graceDaysInput.addEventListener('input', calculatePenaltyDate);
+ }
 
- arrDateInput.addEventListener('input', calculatePenaltyDate);
- graceDaysInput.addEventListener('input', calculatePenaltyDate);
+ if(arrDateInput && guaranteeDurationInput && guaranteeExpiryInput){
+  const calculateGuaranteeExpiry = () => {
+   const arrDateVal = arrDateInput.value;
+   const durationVal = parseInt(guaranteeDurationInput.value) || 0;
+   if(arrDateVal){
+    const d = new Date(arrDateVal);
+    if(!isNaN(d.getTime())){
+     d.setDate(d.getDate() + durationVal);
+     const year = d.getFullYear();
+     const month = String(d.getMonth() + 1).padStart(2, '0');
+     const day = String(d.getDate()).padStart(2, '0');
+     guaranteeExpiryInput.value = `${year}-${month}-${day}`;
+    }
+   }
+  };
+  arrDateInput.addEventListener('input', calculateGuaranteeExpiry);
+  guaranteeDurationInput.addEventListener('input', calculateGuaranteeExpiry);
+ }
 }
 
 async function openForm(key,id=null){
@@ -628,14 +648,14 @@ async function openForm(key,id=null){
   else if(type==='file'){
    control=`<input name="${name}" type="file"><small class="muted" style="display:block;margin-top:4px">${val?`الملف الحالي مسجل: <a href="${val}" target="_blank">عرض المستند</a>`:'اختر ملفاً لرفعه على السحابة'}</small>`;
   }
-  else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count','quantity','weight','invoice_amount','penalty_amount_fc','penalty_amount_egp','refund_amount'].includes(name)?'step="any"':''}>`;
+  else control=`<input name="${name}" type="${type}" value="${esc(val)}" ${['amount','exchange_rate','container_count','quantity','weight','invoice_amount','penalty_amount_fc','penalty_amount_egp','refund_amount','guarantee_duration'].includes(name)?'step="any"':''}>`;
   html+=`<div class="field ${type==='textarea'||type==='file'?'wide':''}"><label>${label}</label>${control}</div>`;
  }
  $('formFields').innerHTML=html;
  $('editModal').classList.add('show');
 
  if(key==='shipments'){
-  setupAutoPenaltyDate();
+  setupAutoCalculations();
  }
 }
 

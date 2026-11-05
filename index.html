@@ -685,67 +685,28 @@ window.importExcelData = async function(event){
    const workbook = XLSX.read(data, {type: 'array'});
    const firstSheetName = workbook.SheetNames[0];
    const worksheet = workbook.Sheets[firstSheetName];
-   
-   // تحويل الشيت إلى JSON كصفوف مصفوفات (Arrays) لقراءة كل السطور بدقة
    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-   if(json.length < 2){ toast('ملف الإكسيل فارغ!'); return; }
-   
-   // الصف الأول (الأعمدة البرمجية الإنجليزية بالملف المحمل)
-   const headers = json[0]; 
-   // بدءاً من الصف الثاني وحتى آخر صف في الملف (جلب كل البيانات بدون توقف)
-   const rowsData = json.slice(1); 
-
+   if(json.length < 2){ toast('ملف الإكسيل فارغ أو غير مطابق للنموذج!'); return; }
+   const headers = json[1];
+   const rowsData = json.slice(2);
    if(!headers || !rowsData.length){ toast('الملف لا يحتوي على بيانات صالحة للاستيراد!'); return; }
-   toast(`جاري استيراد ومعالجة ${rowsData.length} سجل للسحابة...`);
-   
+   toast('جاري رفع واستيراد البيانات...');
    const c = config[page];
    let count = 0;
-   
-   // دالة تحويل التواريخ الرقمية الخاصة بالإكسيل إلى صيغة تاريخ صحيحة
-   const parseExcelDate = (val) => {
-    if (!val) return null;
-    if (typeof val === 'number') {
-     const utcDays = Math.floor(val - 25569);
-     const dateInfo = new Date(utcDays * 86400 * 1000);
-     if (!isNaN(dateInfo.getTime())) {
-      return dateInfo.toISOString().split('T')[0];
-     }
-    }
-    return String(val).trim();
-   };
-
-   const dateFields = ['arrival_date', 'penalty_start_date', 'guarantee_start_date', 'guarantee_expiry_date', 'invoice_date', 'expense_date'];
-
    for(const rowArr of rowsData){
     let cleanObj = {};
     for(let i=0; i<headers.length; i++){
-     if(headers[i] && rowArr[i] !== undefined && rowArr[i] !== ''){ 
-      let val = rowArr[i];
-      if(dateFields.includes(headers[i])) {
-       val = parseExcelDate(val);
-      }
-      cleanObj[headers[i]] = val; 
-     }
+     if(headers[i] && rowArr[i] !== undefined){ cleanObj[headers[i]] = rowArr[i]; }
     }
-    // تخطي الصفوف الفارغة تماماً
     if(Object.keys(cleanObj).length === 0) continue;
-    
-    if(page==='shipments' && !cleanObj.created_by && currentUser && currentUser.id) cleanObj.created_by = currentUser.id;
-    
+    if(page==='shipments' && !cleanObj.created_by) cleanObj.created_by = currentUser.id;
     const {error} = await db.from(c.table).insert(cleanObj);
-    if(!error) {
-     count++;
-    } else {
-     console.error('خطأ في إدخال الصف:', error.message);
-    }
+    if(!error) count++;
    }
-   
-   toast(`تم استيراد ${count} من أصل ${rowsData.length} سجل بنجاح!`);
+   toast(`تم استيراد ${count} سجل بنجاح!`);
    event.target.value = '';
    await renderTable(page);
-  } catch(err){ 
-   toast('خطأ في قراءة ملف الإكسيل: ' + err.message); 
-  }
+  } catch(err){ toast('خطأ في قراءة ملف الإكسيل: ' + err.message); }
  };
  reader.readAsArrayBuffer(file);
 }
@@ -953,8 +914,8 @@ async function saveRecord(ev){
    else obj[name] = null;
   }
  }
- if(key==='shipments'&&!editingId && currentUser) obj.created_by = currentUser.id;
- if(key==='updates'&&!editingId && currentUser) obj.created_by = currentUser.id;
+ if(key==='shipments'&&!editingId) obj.created_by = currentUser.id;
+ if(key==='updates'&&!editingId) obj.created_by = currentUser.id;
  let q=editingId?db.from(c.table).update(obj).eq('id',editingId):db.from(c.table).insert(obj);
  const {error}=await q;
  if(error){toast(error.message);return}
@@ -1052,7 +1013,16 @@ $('searchInput').oninput=async e=>{
  await drawRows(page,filtered);
 };
 
-dashboard();
+const {data:{session}}=await db.auth.getSession();
+if(session){
+ currentUser=session.user;
+ try{
+  await loadProfile();
+  $('login').style.display='none';
+  $('app').style.display='block';
+  await dashboard();
+ }catch(e){await db.auth.signOut()}
+}
 </script>
 </body>
 </html>

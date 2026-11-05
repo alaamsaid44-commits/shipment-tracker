@@ -120,7 +120,7 @@ td .actions{display:flex;gap:6px}
      <label id="importExcelBtnWrap" class="secondary" style="display:none; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:700; background:#eaf1f8; color:var(--navy);">
       📂 استيراد من Excel <input type="file" id="importExcelFile" accept=".xlsx, .xls, .csv" style="display:none" onchange="importExcelData(event)">
      </label>
-     <button class="primary" id="addBtn">＋ إضافة جديد</button>
+     <!-- زر الإضافة تم إزالته من لوحة التحكم بناءً على طلبك -->
     </div>
    </div>
    
@@ -324,7 +324,7 @@ async function loadProfile(){
   $('userLabel').textContent=data.full_name||currentUser.email;
   $('roleLabel').textContent=currentRole==='admin'?'مدير النظام':currentRole==='editor'?'موظف':'مشاهدة فقط';
  }
- $('addBtn').style.display=currentRole==='viewer'?'none':'';
+ // زر الإضافة مخفي دائماً في لوحة التحكم بناءً على رغبتك
 }
 
 async function lookup(table,id){if(!id)return '—';let {data}=await db.from(table).select('*').eq('id',id).maybeSingle();return data?(data.name||data.full_name||data.shipment_no||data.email||'—'):'—'}
@@ -538,15 +538,25 @@ window.importExcelData = async function(event){
 }
 
 async function dashboard(){
- const [s,e]=await Promise.all([db.from('shipments').select('id,direction,shipment_no,created_at',{count:'exact'}),db.from('shipment_expenses').select('amount_egp')]);
+ const [s,e]=await Promise.all([db.from('shipments').select('id,customs_declaration_no,supplier_name,shipment_description,container_count,status,created_at',{count:'exact'}),db.from('shipment_expenses').select('amount_egp')]);
  if(s.error||e.error){toast((s.error||e.error).message);return}
  const all=s.data||[];
  $('sShipments').textContent=s.count??all.length;
  $('sIncoming').textContent=all.filter(x=>x.direction==='incoming').length;
  $('sOutgoing').textContent=all.filter(x=>x.direction==='outgoing').length;
  $('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});
+ 
  const recent=all.slice(0,8);
- $('recentShipments').innerHTML=recent.length?'<table><thead><tr><th>رقم الشحنة</th><th>أمر التوريد</th><th>الاتجاه</th><th>تاريخ التسجيل</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${esc(x.shipment_no)}</td><td>${esc(x.order_no||'-')}</td><td>${esc(labelFor(x.direction))}</td><td>${esc(x.created_at?.slice(0,10))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">لا توجد شحنات مسجلة</div>';
+ $('recentShipments').innerHTML = recent.length ? 
+  `<table><thead><tr><th>رقم الشهادة</th><th>اسم المورد</th><th>اسم الصنف</th><th>الكمية</th><th>حالة الشحنة</th></tr></thead><tbody>` +
+  recent.map(x => `<tr>
+   <td>${esc(x.customs_declaration_no || '-')}</td>
+   <td>${esc(x.supplier_name || '-')}</td>
+   <td>${esc(x.shipment_description || '-')}</td>
+   <td>${esc(x.container_count || '-')}</td>
+   <td><span class="pill">${esc(labelFor(x.status))}</span></td>
+  </tr>`).join('') + `</tbody></table>` : 
+  '<div class="empty">لا توجد شحنات مسجلة</div>';
 }
 
 async function optionsFor(type){

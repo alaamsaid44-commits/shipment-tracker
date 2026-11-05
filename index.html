@@ -40,16 +40,12 @@ tbody tr:nth-child(even){background-color:#fbfcfd}
 tbody tr:hover{background-color:#f1f5f9}
 td .actions{display:flex;gap:6px}
 .pill{display:inline-block;border-radius:30px;padding:4px 10px;background:#eaf5f3;color:#087c6c;font-size:12px;font-weight:700}
-.pill-alert{background:#fff0f0;color:var(--red);animation:pulse 1.5s infinite}
-@keyframes pulse{0%{opacity:1}50%{opacity:0.6}100%{opacity:1}}
 .empty{text-align:center;padding:40px;color:var(--muted);font-weight:600}
 .modal{display:none;position:fixed;inset:0;background:#0b1d2f88;z-index:10;padding:20px;overflow:auto}.modal.show{display:grid;place-items:start center}
 .modal-box{width:min(850px,100%);background:#fff;border-radius:18px;padding:22px;margin:30px auto}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.form-grid .wide{grid-column:1/-1}
 .modal-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:18px}
 .notice{padding:12px 16px;border-radius:12px;background:#fff8e8;color:#8b5c11;font-size:13px;margin:12px 0;border-right:4px solid var(--gold)}
-.alert-box{padding:14px 18px;border-radius:14px;background:#fff0f0;color:#9c27b0;font-size:14px;margin-bottom:12px;border-right:5px solid var(--red);display:flex;align-items:center;justify-content:space-between}
-.alert-box.gold{background:#fffbf0;color:#8b5c11;border-right-color:var(--gold)}
 #toast{position:fixed;bottom:20px;left:20px;background:#142b4a;color:#fff;padding:12px 18px;border-radius:12px;display:none;z-index:30;box-shadow:0 8px 30px #0002;max-width:min(500px,90vw)}
 
 .print-header { display: none; }
@@ -57,7 +53,7 @@ td .actions{display:flex;gap:6px}
 @media print{
  @page { size: A4 landscape; margin: 20mm 8mm 10mm 8mm; }
  body { background: #fff !important; color: #000 !important; font-size: 8px !important; font-family: 'Cairo', Arial, sans-serif !important; }
- .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable, #repStatusFilter, #repSupplierFilter, #repPortFilter, #repStartDate, #repEndDate, #repSpecificShipment, .pagehead, #pageTitle { display: none !important; }
+ .topbar, .sidebar, .toolbar, .no-print, button, .actions, .panel-head, .cards, #repTargetTable, .pagehead, #pageTitle { display: none !important; }
  #reportsPage { display: block !important; padding-top: 0 !important; }
  .layout { display: block !important; }
  .main { padding: 0 !important; width: 100% !important; margin: 0 !important; }
@@ -128,16 +124,6 @@ td .actions{display:flex;gap:6px}
    </div>
    
    <section id="dashboardPage">
-    <div id="warrantyAlertBanner" style="display:none;" class="alert-box">
-     <div><strong>⚠️ تنبيه الضمان:</strong> يوجد <span id="expiringCount" style="font-weight:bold; color:var(--red);">0</span> شحنة يقترب موعد انتهاء ضمانها أو انتهى بالفعل!</div>
-     <button class="secondary" onclick="showPage('shipments')" style="background:#fff; color:var(--red); padding:4px 10px; font-size:12px;">عرض الشحنات</button>
-    </div>
-
-    <div id="penaltyAlertBanner" style="display:none;" class="alert-box gold">
-     <div><strong>⏱️ تنبيه غرامات/أرضيات:</strong> يوجد <span id="penaltyCount" style="font-weight:bold; color:#8b5c11;">0</span> شحنة انتهت أيام السماح لها واقتربت أو بدأت غراماتها!</div>
-     <button class="secondary" onclick="showPage('shipments')" style="background:#fff; color:#8b5c11; padding:4px 10px; font-size:12px;">عرض الشحنات</button>
-    </div>
-
     <div class="cards">
      <div class="stat"><small>إجمالي الشحنات</small><strong id="sShipments">—</strong></div>
      <div class="stat"><small>الشحنات الواردة</small><strong id="sIncoming">—</strong></div>
@@ -172,16 +158,15 @@ td .actions{display:flex;gap:6px}
       <p>تاريخ الاستخراج: <span id="printDate"></span></p>
      </div>
      <div class="panel-head no-print">
-      <h3 id="reportTitleHeading">تقرير تفصيلي شامل ومخصص</h3>
+      <h3 id="reportTitleHeading">تقرير تفصيلي شامل</h3>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
        <button onclick="triggerPrintReport()" class="secondary" style="background-color: #142b4a; color: #fff;">🖨️ طباعة التقرير مباشرة</button>
        <button onclick="exportReportsToExcel()" class="primary" style="background-color: #0f9d8a;">📥 تصدير التقرير (Excel)</button>
       </div>
      </div>
-     
-     <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);" class="no-print">
-      <div style="flex: 1; min-width: 200px;">
-       <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة المراد استخراج تقريرها</label>
+     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f7f9fc; padding: 15px; border-radius: 10px; border:1px solid var(--line);" class="no-print">
+      <div style="flex: 1; min-width: 250px;">
+       <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">اختر الشاشة المراد استخراج تقريرها الشامل</label>
        <select id="repTargetTable" style="padding: 10px;">
         <option value="shipments">تقرير الشحنات الشامل</option>
         <option value="suppliers">تقرير الموردين الشامل</option>
@@ -192,71 +177,10 @@ td .actions{display:flex;gap:6px}
         <option value="updates">تقرير سجل المتابعة والعمليات الشامل</option>
        </select>
       </div>
-
-      <div style="flex: 1; min-width: 220px;" id="specificShipmentFilterWrap">
-       <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">تخصيص لشحنة معينة (اختياري)</label>
-       <select id="repSpecificShipment" style="padding: 10px;">
-        <option value="">— كل الشحنات (عام) —</option>
-       </select>
-      </div>
-      
-      <div id="shipmentFiltersBox" style="display: flex; gap: 10px; flex: 3; flex-wrap: wrap;">
-       <div style="flex: 1; min-width: 140px;">
-        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">الحالة</label>
-        <select id="repStatusFilter" style="padding: 10px;">
-         <option value="">— الكل —</option>
-         <option value="new">جديدة</option>
-         <option value="in_progress">قيد المتابعة</option>
-         <option value="on_the_way">في الطريق</option>
-         <option value="waiting_for_shipping">في انتظار الشحن</option>
-         <option value="at_port">وصلت الميناء</option>
-         <option value="waiting_for_inspection">في انتظار الكشف والمعاينة</option>
-         <option value="waiting_for_security_approvals">في انتظار الموافقات الأمنية</option>
-         <option value="waiting_for_documents_from_bank">في انتظار المستندات من البنك</option>
-         <option value="released">تم الإفراج</option>
-         <option value="delivered">تم التسليم</option>
-         <option value="closed">مغلقة</option>
-        </select>
-       </div>
-       <div style="flex: 1; min-width: 140px;">
-        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">المورد</label>
-        <select id="repSupplierFilter" style="padding: 10px;">
-         <option value="">— الكل —</option>
-        </select>
-       </div>
-       <div style="flex: 1; min-width: 140px;">
-        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">ميناء الوصول</label>
-        <select id="repPortFilter" style="padding: 10px;">
-         <option value="">— كل الموانئ —</option>
-         <option value="ميناء الإسكندرية">ميناء الإسكندرية</option>
-         <option value="ميناء الدخيلة">ميناء الدخيلة</option>
-         <option value="ميناء دمياط">ميناء دمياط</option>
-         <option value="ميناء بورسعيد">ميناء بورسعيد</option>
-         <option value="ميناء السخنة">ميناء السخنة</option>
-         <option value="ميناء سفاجا">ميناء سفاجا</option>
-         <option value="مطار القاهرة الدولي">مطار القاهرة الدولي</option>
-         <option value="المصنع">المصنع</option>
-         <option value="أخرى">أخرى</option>
-        </select>
-       </div>
-       <div style="flex: 1; min-width: 130px;">
-        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">من تاريخ وصول</label>
-        <input type="date" id="repStartDate" style="padding: 9px;">
-       </div>
-       <div style="flex: 1; min-width: 130px;">
-        <label style="font-size: 13px; font-weight: bold; color: var(--navy); display: block; margin-bottom: 6px;">إلى تاريخ وصول</label>
-        <input type="date" id="repEndDate" style="padding: 9px;">
-       </div>
-      </div>
      </div>
-
-     <div class="cards" style="margin-bottom: 20px;">
-      <div class="stat"><small>إجمالي عدد السجلات</small><strong id="repCount">0</strong></div>
-      <div class="stat" id="statSumEgpBox" style="display:none;"><small>إجمالي المبلغ (جنيه مصري)</small><strong id="repSumEgp" style="color:var(--teal)">0 ج.م</strong></div>
-      <div class="stat" id="statSumPenaltyBox" style="display:none;"><small>إجمالي الغرامات (جنيه مصري)</small><strong id="repSumPenalty" style="color:var(--red)">0 ج.م</strong></div>
-      <div class="stat" id="statSumRefundBox" style="display:none;"><small>إجمالي الاسترداد (جنيه مصري)</small><strong id="repSumRefund" style="color:var(--gold)">0 ج.م</strong></div>
+     <div class="cards" style="margin-bottom: 20px;" class="no-print">
+      <div class="stat"><small>إجمالي عدد السجلات في هذا التقرير</small><strong id="repCount">0</strong></div>
      </div>
-     
      <div class="table-wrap">
       <table id="reportsTable">
        <thead><tr id="reportsHeaderRow"></tr></thead>
@@ -297,7 +221,7 @@ const config={
  shipments:{
   title:'الشحنات',
   table:'shipments',
-  cols:[['shipment_no','رقم الشحنة'],['order_no','أمر التوريد (Order No)'],['direction','الاتجاه'],['bank_name','البنك'],['lc_no','رقم الاعتماد/التحصيل'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipment_description','وصف الشحنة / الصنف'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['arrival_date','تاريخ الوصول'],['container_count','عدد الحاويات / الكمية'],['container_type','نوع الحاوية'],['pallets_count','عدد البالتات/الكراتين'],['weight','الوزن'],['grace_days','أيام السماح'],['penalty_start_date','بدء الغرامة'],['release_type','نوع الإفراج'],['guarantee_type','نوع الضمان'],['guarantee_start_date','تاريخ بدء الضمان'],['guarantee_duration','مدة الضمان'],['guarantee_expiry_date','تاريخ انتهاء الضمان'],['broker_id','مكتب التخليص'],['status','الحالة'],['notes','ملاحظات']],
+  cols:[['shipment_no','رقم الشحنة'],['order_no','أمر التوريد (Order No)'],['direction','الاتجاه'],['bank_name','البنك'],['lc_no','رقم الاعتماد/التحصيل'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipment_description','وصف الشحنة / الصنف'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['arrival_date','تاريخ الوصول'],['container_count','عدد الحاويات / الكمية'],['container_type','نوع الحاوية'],['pallets_count','عدد البالتات/الكراتين'],['weight','الوزن'],['grace_days','أيام السماح'],['penalty_start_date','بدء الغرامة'],['release_type','نوع الإفراج'],['guarantee_type','نوع الضمان'],['guarantee_duration','مدة الضمان'],['guarantee_expiry_date','تاريخ انتهاء الضمان'],['broker_id','مكتب التخليص'],['status','الحالة'],['notes','ملاحظات']],
   fields:[
    ['shipment_no','رقم الشهادة / الشحنة','text'],
    ['order_no','رقم أمر التوريد (Order No)','text'],
@@ -316,11 +240,10 @@ const config={
    ['acid_number','رقم ACID','text'],
    ['grace_days','أيام السماح','number'],
    ['penalty_start_date','تاريخ بدء الغرامة (تلقائي)','date'],
-   ['release_type','نوع الإفراج','select',['سماح مؤقت','نهائي','دروباك','منطقة حرة','تحفظ جمركي','أخرى']],
+   ['release_type','نوع الإفراج','select',['سماح مؤقت','نهائي','دروب','منطقة حرة','تحفظ جمركي','أخرى']],
    ['guarantee_type','نوع الضمان','select',['بنكي','نقدي','تعهد','أخرى']],
-   ['guarantee_start_date','تاريخ بدء الضمان','date'],
-   ['guarantee_duration','مدة الضمان','select',['عام','عام و نصف','عامان','ثلاث أعوام']],
-   ['guarantee_expiry_date','تاريخ انتهاء الضمان (تلقائي)','date'],
+   ['guarantee_duration','مدة الضمان','text'],
+   ['guarantee_expiry_date','تاريخ انتهاء الضمان','date'],
    ['broker_id','مكتب التخليص','broker'],
    ['status','حالة الشحنة والتتبع','select',['new','in_progress','on_the_way','waiting_for_shipping','at_port','waiting_for_inspection','waiting_for_security_approvals','waiting_for_documents_from_bank','released','delivered','closed']],
    ['document_file','رفع بوليصة / مستند الشحنة','file'],
@@ -390,8 +313,7 @@ function labelFor(k){
   on_the_way:'في الطريق', waiting_for_shipping:'في انتظار الشحن', at_port:'وصلت الميناء',
   waiting_for_inspection:'في انتظار الكشف والمعاينة', waiting_for_security_approvals:'في انتظار الموافقات الأمنية',
   waiting_for_documents_from_bank:'في انتظار المستندات من البنك', released:'تم الإفراج',
-  delivered:'تم التسليم', closed:'مغلقة', EGP:'جنيه مصري', USD:'دولار أمريكي', EUR:'يورو',
-  'عام':'عام', 'عام و نصف':'عام و نصف', 'عامان':'عامان', 'ثلاث أعوام':'ثلاث أعوام'
+  delivered:'تم التسليم', closed:'مغلقة', EGP:'جنيه مصري', USD:'دولار أمريكي', EUR:'يورو'
  };
  return map[k]||k||'—';
 }
@@ -427,14 +349,13 @@ window.showPage = async function(p){
   await dashboard();
  } else if(p==='reports'){
   page=p;
-  $('pageTitle').textContent='تقارير الشاشات المخصصة (Excel)';
+  $('pageTitle').textContent='تقارير الشاشات الشاملة (Excel)';
   $('dashboardPage').style.display='none';
   $('listPage').style.display='none';
   $('reportsPage').style.display='block';
   $('addBtn').style.display='none';
   $('importExcelBtnWrap').style.display='none';
   $('downloadTemplateBtn').style.display='none';
-  await populateReportDropdowns();
   await loadReportsData();
  } else {
   await renderTable(p);
@@ -485,15 +406,8 @@ function renderScreenSummary(key, data){
 async function drawRows(key,data){
  const c=config[key];
  let html='<table><thead><tr>'+c.fields.map(x=>`<th>${x[1]}</th>`).join('')+'<th>إجراءات التحكم</th></tr></thead><tbody>';
- const today = new Date();
  for(const r of data){
   html+='<tr>';
-  let isExpiringSoon = false;
-  if(key === 'shipments' && r.guarantee_expiry_date){
-   const expiryDate = new Date(r.guarantee_expiry_date);
-   const diffDays = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-   if(diffDays <= 30) isExpiringSoon = true;
-  }
   for(const [k] of c.fields){
    let v=r[k];
    if(k==='shipment_id')v=await lookup('shipments',v);
@@ -501,12 +415,7 @@ async function drawRows(key,data){
    if(k==='beneficiary_id')v=await lookup('beneficiaries',v);
    if(k==='followup_responsible')v=await lookup('profiles',v);
    if(k.includes('_file')) v = v ? 'مستند مرفق' : 'لا يوجد';
-   
-   let cellContent = esc(labelFor(v));
-   if(k === 'guarantee_expiry_date' && isExpiringSoon){
-    cellContent = `<span class="pill pill-alert" title="قريب الانتهاء أو منتهي">${cellContent} ⚠️</span>`;
-   }
-   html+=`<td>${cellContent}</td>`;
+   html+=`<td>${esc(labelFor(v))}</td>`;
   }
   let extraBtns='';
   if(key==='shipments'){
@@ -551,92 +460,15 @@ window.downloadExcelTemplate = function(){
  toast(`تم تحميل نموذج ${c.title} بنجاح!`);
 }
 
-async function populateReportDropdowns(){
- const {data: sups}=await db.from('suppliers').select('name').limit(500);
- const supSelect = $('repSupplierFilter');
- supSelect.innerHTML = '<option value="">— الكل —</option>';
- if(sups){
-  sups.forEach(s=>{
-   supSelect.innerHTML += `<option value="${esc(s.name)}">${esc(s.name)}</option>`;
-  });
- }
-
- const {data: ships}=await db.from('shipments').select('id, shipment_no, shipment_description').limit(500);
- const shipSelect = $('repSpecificShipment');
- shipSelect.innerHTML = '<option value="">— كل الشحنات (عام) —</option>';
- if(ships){
-  ships.forEach(sh=>{
-   shipSelect.innerHTML += `<option value="${sh.id}">شحنة: ${esc(sh.shipment_no || 'بدون رقم')} (${esc(sh.shipment_description || 'أخرى')})</option>`;
-  });
- }
-}
-
 async function loadReportsData(){
  const targetKey=$('repTargetTable').value;
  const c=config[targetKey];
- 
- if(targetKey === 'shipments'){
-  $('shipmentFiltersBox').style.display = 'flex';
-  $('specificShipmentFilterWrap').style.display = 'none';
- } else if(['expenses', 'invoices', 'updates'].includes(targetKey)) {
-  $('shipmentFiltersBox').style.display = 'none';
-  $('specificShipmentFilterWrap').style.display = 'block';
-  $('repStatusFilter').value = '';
-  $('repSupplierFilter').value = '';
-  $('repPortFilter').value = '';
-  $('repStartDate').value = '';
-  $('repEndDate').value = '';
- } else {
-  $('shipmentFiltersBox').style.display = 'none';
-  $('specificShipmentFilterWrap').style.display = 'none';
- }
-
- $('reportTitleHeading').textContent = `تقرير ${c.title} المخصص`;
- $('printReportTitle').textContent = `تقرير ${c.title} المخصص`;
+ $('reportTitleHeading').textContent = `تقرير ${c.title} الشامل`;
+ $('printReportTitle').textContent = `تقرير ${c.title} الشامل`;
  $('printDate').textContent = new Date().toLocaleDateString('ar-EG');
- 
- let query = db.from(c.table).select('*').order('created_at',{ascending:false});
- 
- if(targetKey === 'shipments'){
-  const statusVal = $('repStatusFilter').value;
-  const supplierVal = $('repSupplierFilter').value;
-  const portVal = $('repPortFilter').value;
-  const startDateVal = $('repStartDate').value;
-  const endDateVal = $('repEndDate').value;
-
-  if(statusVal) query = query.eq('status', statusVal);
-  if(supplierVal) query = query.eq('supplier_name', supplierVal);
-  if(portVal) query = query.eq('arrival_port', portVal);
-  if(startDateVal) query = query.gte('arrival_date', startDateVal);
-  if(endDateVal) query = query.lte('arrival_date', endDateVal);
- } else if(['expenses', 'invoices', 'updates'].includes(targetKey)){
-  const specificShipmentVal = $('repSpecificShipment').value;
-  if(specificShipmentVal) query = query.eq('shipment_id', specificShipmentVal);
- }
-
- const {data,error}=await query.limit(500);
+ const {data,error}=await db.from(c.table).select('*').order('created_at',{ascending:false}).limit(500);
  if(error){toast(error.message);return;}
  const list=data||[];
- 
- // حساب الإجماليات المالية إذا كان التقرير للمصروفات
- if(targetKey === 'expenses'){
-  const sumEgp = list.reduce((acc, cur) => acc + Number(cur.amount_egp || 0), 0);
-  const sumPenalty = list.reduce((acc, cur) => acc + Number(cur.penalty_amount_egp || 0), 0);
-  const sumRefund = list.reduce((acc, cur) => acc + Number(cur.refund_amount || 0), 0);
-
-  $('repSumEgp').textContent = sumEgp.toLocaleString() + ' ج.م';
-  $('repSumPenalty').textContent = sumPenalty.toLocaleString() + ' ج.م';
-  $('repSumRefund').textContent = sumRefund.toLocaleString() + ' ج.م';
-
-  $('statSumEgpBox').style.display = 'block';
-  $('statSumPenaltyBox').style.display = 'block';
-  $('statSumRefundBox').style.display = 'block';
- } else {
-  $('statSumEgpBox').style.display = 'none';
-  $('statSumPenaltyBox').style.display = 'none';
-  $('statSumRefundBox').style.display = 'none';
- }
-
  const headRow=$('reportsHeaderRow');
  const tbody=$('reportsTableBody');
  headRow.innerHTML='';
@@ -671,8 +503,8 @@ window.exportReportsToExcel=function(){
  const workbook=XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(workbook, worksheet, titleName.slice(0, 30));
  const today=new Date().toISOString().split('T')[0];
- XLSX.writeFile(workbook, `تقرير_مخصص_${titleName}_${today}.xlsx`);
- toast(`تم تصدير التقرير المخصص لـ ${titleName} بنجاح!`);
+ XLSX.writeFile(workbook, `تقرير_شامل_${titleName}_${today}.xlsx`);
+ toast(`تم تصدير التقرير الشامل لـ ${titleName} بنجاح!`);
 }
 
 window.importExcelData = async function(event){
@@ -723,61 +555,16 @@ async function dashboard(){
  $('sOutgoing').textContent=all.filter(x=>x.direction==='outgoing').length;
  $('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});
  
- const today = new Date();
- 
- // 1. فحص تواريخ الضمان
- const expiringWarranty = all.filter(x => {
-  if(!x.guarantee_expiry_date) return false;
-  const exp = new Date(x.guarantee_expiry_date);
-  const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
-  return diffDays <= 30;
- });
-
- if(expiringWarranty.length > 0){
-  $('expiringCount').textContent = expiringWarranty.length;
-  $('warrantyAlertBanner').style.display = 'flex';
- } else {
-  $('warrantyAlertBanner').style.display = 'none';
- }
-
- // 2. فحص تواريخ الغرامات والأرضيات
- const expiringPenalty = all.filter(x => {
-  if(!x.penalty_start_date) return false;
-  const penDate = new Date(x.penalty_start_date);
-  const diffDays = Math.ceil((penDate - today) / (1000 * 60 * 60 * 24));
-  return diffDays <= 7;
- });
-
- if(expiringPenalty.length > 0){
-  $('penaltyCount').textContent = expiringPenalty.length;
-  $('penaltyAlertBanner').style.display = 'flex';
- } else {
-  $('penaltyAlertBanner').style.display = 'none';
- }
-
  const recent=all.slice(0,8);
  $('recentShipments').innerHTML = recent.length ? 
-  `<table><thead><tr><th>رقم الشهادة / الشحنة</th><th>اسم المورد</th><th>اسم الصنف</th><th>تاريخ انتهاء الضمان</th><th>تاريخ بدء الغرامة</th><th>حالة الشحنة</th></tr></thead><tbody>` +
-  recent.map(x => {
-   let isExpiringW = false;
-   if(x.guarantee_expiry_date){
-    const exp = new Date(x.guarantee_expiry_date);
-    if(Math.ceil((exp - today) / (1000 * 60 * 60 * 24)) <= 30) isExpiringW = true;
-   }
-   let isExpiringP = false;
-   if(x.penalty_start_date){
-    const pen = new Date(x.penalty_start_date);
-    if(Math.ceil((pen - today) / (1000 * 60 * 60 * 24)) <= 7) isExpiringP = true;
-   }
-   return `<tr>
-    <td>${esc(x.shipment_no || x.customs_declaration_no || '-')}</td>
-    <td>${esc(x.supplier_name || '-')}</td>
-    <td>${esc(x.shipment_description || '-')}</td>
-    <td>${x.guarantee_expiry_date ? `${esc(x.guarantee_expiry_date)} ${isExpiringW ? '⚠️' : ''}` : '-'}</td>
-    <td>${x.penalty_start_date ? `${esc(x.penalty_start_date)} ${isExpiringP ? '⏱️' : ''}` : '-'}</td>
-    <td><span class="pill">${esc(labelFor(x.status))}</span></td>
-   </tr>`;
-  }).join('') + `</tbody></table>` : 
+  `<table><thead><tr><th>رقم الشهادة / الشحنة</th><th>اسم المورد</th><th>اسم الصنف</th><th>الكمية</th><th>حالة الشحنة</th></tr></thead><tbody>` +
+  recent.map(x => `<tr>
+   <td>${esc(x.shipment_no || x.customs_declaration_no || '-')}</td>
+   <td>${esc(x.supplier_name || '-')}</td>
+   <td>${esc(x.shipment_description || '-')}</td>
+   <td>${esc(x.container_count || '-')}</td>
+   <td><span class="pill">${esc(labelFor(x.status))}</span></td>
+  </tr>`).join('') + `</tbody></table>` : 
   '<div class="empty">لا توجد شحنات مسجلة</div>';
 }
 
@@ -792,60 +579,31 @@ async function optionsFor(type){
  return data||[];
 }
 
-function setupAutoCalculations(){
+function setupAutoPenaltyDate(){
  const arrDateInput = document.querySelector('input[name="arrival_date"]');
  const graceDaysInput = document.querySelector('input[name="grace_days"]');
  const penaltyDateInput = document.querySelector('input[name="penalty_start_date"]');
  
- const guaranteeStartDateInput = document.querySelector('input[name="guarantee_start_date"]');
- const guaranteeDurationSelect = document.querySelector('select[name="guarantee_duration"]');
- const guaranteeExpiryInput = document.querySelector('input[name="guarantee_expiry_date"]');
- 
- if(arrDateInput && graceDaysInput && penaltyDateInput){
-  const calculatePenaltyDate = () => {
-   const arrDateVal = arrDateInput.value;
-   const graceDaysVal = parseInt(graceDaysInput.value) || 0;
-   if(arrDateVal){
-    const d = new Date(arrDateVal);
-    if(!isNaN(d.getTime())){
-     d.setDate(d.getDate() + graceDaysVal);
-     const year = d.getFullYear();
-     const month = String(d.getMonth() + 1).padStart(2, '0');
-     const day = String(d.getDate()).padStart(2, '0');
-     penaltyDateInput.value = `${year}-${month}-${day}`;
-    }
-   }
-  };
-  arrDateInput.addEventListener('input', calculatePenaltyDate);
-  graceDaysInput.addEventListener('input', calculatePenaltyDate);
- }
+ if(!arrDateInput || !graceDaysInput || !penaltyDateInput) return;
 
- if(guaranteeStartDateInput && guaranteeDurationSelect && guaranteeExpiryInput){
-  const calculateGuaranteeExpiry = () => {
-   const startDateVal = guaranteeStartDateInput.value;
-   const durationVal = guaranteeDurationSelect.value;
-   if(startDateVal && durationVal){
-    const d = new Date(startDateVal);
-    if(!isNaN(d.getTime())){
-     if(durationVal === 'عام') {
-      d.setFullYear(d.getFullYear() + 1);
-     } else if(durationVal === 'عام و نصف') {
-      d.setMonth(d.getMonth() + 18);
-     } else if(durationVal === 'عامان') {
-      d.setFullYear(d.getFullYear() + 2);
-     } else if(durationVal === 'ثلاث أعوام') {
-      d.setFullYear(d.getFullYear() + 3);
-     }
-     const year = d.getFullYear();
-     const month = String(d.getMonth() + 1).padStart(2, '0');
-     const day = String(d.getDate()).padStart(2, '0');
-     guaranteeExpiryInput.value = `${year}-${month}-${day}`;
-    }
+ const calculatePenaltyDate = () => {
+  const arrDateVal = arrDateInput.value;
+  const graceDaysVal = parseInt(graceDaysInput.value) || 0;
+  
+  if(arrDateVal){
+   const d = new Date(arrDateVal);
+   if(!isNaN(d.getTime())){
+    d.setDate(d.getDate() + graceDaysVal);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    penaltyDateInput.value = `${year}-${month}-${day}`;
    }
-  };
-  guaranteeStartDateInput.addEventListener('input', calculateGuaranteeExpiry);
-  guaranteeDurationSelect.addEventListener('change', calculateGuaranteeExpiry);
- }
+  }
+ };
+
+ arrDateInput.addEventListener('input', calculatePenaltyDate);
+ graceDaysInput.addEventListener('input', calculatePenaltyDate);
 }
 
 async function openForm(key,id=null){
@@ -877,7 +635,7 @@ async function openForm(key,id=null){
  $('editModal').classList.add('show');
 
  if(key==='shipments'){
-  setupAutoCalculations();
+  setupAutoPenaltyDate();
  }
 }
 
@@ -997,12 +755,6 @@ $('closeModal').onclick=$('cancelModal').onclick=()=>$('editModal').classList.re
 $('recordForm').onsubmit=saveRecord;
 $('refreshBtn').onclick=()=>renderTable(page);
 $('repTargetTable').onchange = () => loadReportsData();
-$('repSpecificShipment').onchange = () => loadReportsData();
-$('repStatusFilter').onchange = () => loadReportsData();
-$('repSupplierFilter').onchange = () => loadReportsData();
-$('repPortFilter').onchange = () => loadReportsData();
-$('repStartDate').onchange = () => loadReportsData();
-$('repEndDate').onchange = () => loadReportsData();
 
 $('searchInput').oninput=async e=>{
  const c=config[page],q=e.target.value.toLowerCase();

@@ -686,16 +686,15 @@ window.importExcelData = async function(event){
    const firstSheetName = workbook.SheetNames[0];
    const worksheet = workbook.Sheets[firstSheetName];
    
-   // قراءة الملف كصفوف مصفوفات
+   // تحويل الشيت إلى JSON
    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
    if(json.length < 2){ toast('ملف الإكسيل فارغ!'); return; }
    
-   // الصف الأول يحتوي على أسماء الأعمدة البرمجية (Headers)
-   const headers = json[0]; 
-   const rowsData = json.slice(1); 
+   const headers = json[0]; // صف الأعمدة البرمجية
+   const rowsData = json.slice(1); // بيانات السطور
 
    if(!headers || !rowsData.length){ toast('الملف لا يحتوي على بيانات صالحة للاستيراد!'); return; }
-   toast(`جاري استيراد ومعالجة ${rowsData.length} سجل للسحابة...`);
+   toast(`جاري فحص واستيراد ${rowsData.length} سجل للسحابة...`);
    
    const c = config[page];
    let count = 0;
@@ -720,25 +719,31 @@ window.importExcelData = async function(event){
     for(let i=0; i<headers.length; i++){
      if(headers[i] && rowArr[i] !== undefined && rowArr[i] !== ''){ 
       let val = rowArr[i];
-      if(dateFields.includes(String(headers[i]).trim())) {
+      let fieldName = String(headers[i]).trim();
+      if(dateFields.includes(fieldName)) {
        val = parseExcelDate(val);
       }
-      cleanObj[String(headers[i]).trim()] = val; 
+      cleanObj[fieldName] = val; 
      }
     }
     
+    // تخطي الصفوف الفارغة
     if(Object.keys(cleanObj).length === 0) continue;
     
+    // تنظيف الحقول التي قد تكون مفاتيح أجنبية فارغة لتجنب رفض قاعدة البيانات
+    if(cleanObj.shipment_id === "" || cleanObj.shipment_id === "—") delete cleanObj.shipment_id;
+    if(cleanObj.broker_id === "" || cleanObj.broker_id === "—") delete cleanObj.broker_id;
+
     if(page==='shipments' && !cleanObj.created_by && currentUser && currentUser.id) {
      cleanObj.created_by = currentUser.id;
     }
     
-    // إدخال البيانات للسحابة مع طباعة الخطأ الدقيق إن وُجد
+    // إدخال السجل للسحابة مع طباعة سبب الرفض إن وُجد
     const {error} = await db.from(c.table).insert(cleanObj);
     if(!error) {
      count++;
     } else {
-     console.error(`خطأ في الصف رقم ${rIndex + 2}:`, error.message, cleanObj);
+     console.error(`❌ خطأ في إدخال السجل رقم ${rIndex + 2}:`, error.message, cleanObj);
     }
    }
    
@@ -747,11 +752,11 @@ window.importExcelData = async function(event){
    await renderTable(page);
   } catch(err){ 
    toast('خطأ في قراءة ملف الإكسيل: ' + err.message); 
+   console.error(err);
   }
  };
  reader.readAsArrayBuffer(file);
-}
-async function dashboard(){
+}async function dashboard(){
  const [s,e]=await Promise.all([
   db.from('shipments').select('*',{count:'exact'}),
   db.from('shipment_expenses').select('amount_egp')

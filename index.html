@@ -119,7 +119,7 @@ td .actions{display:flex;gap:6px}
      <label id="importExcelBtnWrap" class="secondary" style="display:none; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:700; background:#eaf1f8; color:var(--navy);">
       📂 استيراد من Excel <input type="file" id="importExcelFile" accept=".xlsx, .xls, .csv" style="display:none" onchange="importExcelData(event)">
      </label>
-     <button class="primary" id="addBtn">＋ إضافة جديد</button>
+     <button class="primary" id="addBtn" style="display:none;">＋ إضافة جديد</button>
     </div>
    </div>
    
@@ -221,7 +221,7 @@ const config={
  shipments:{
   title:'الشحنات',
   table:'shipments',
-  cols:[['shipment_no','رقم الشحنة'],['order_no','أمر التوريد (Order No)'],['direction','الاتجاه'],['bank_name','البنك'],['lc_no','رقم الاعتماد/التحصيل'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipment_description','وصف الشحنة / الصنف'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['container_count','عدد الحاويات / الكمية'],['pallets_count','عدد البالتات/الكراتين'],['weight','الوزن'],['grace_days','أيام السماح'],['penalty_start_date','بدء الغرامة'],['temporary_shipment_no','رقم الشحنة بالسماح'],['guarantee_type','نوع الضمان'],['guarantee_duration','مدة الضمان'],['guarantee_expiry_date','تاريخ انتهاء الضمان'],['broker_id','مكتب التخليص'],['status','الحالة'],['notes','ملاحظات']],
+  cols:[['shipment_no','رقم الشحنة'],['order_no','أمر التوريد (Order No)'],['direction','الاتجاه'],['bank_name','البنك'],['lc_no','رقم الاعتماد/التحصيل'],['acid_number','رقم ACID'],['supplier_name','المورد'],['shipment_description','وصف الشحنة / الصنف'],['shipping_port','ميناء الشحن'],['arrival_port','ميناء الوصول'],['arrival_date','تاريخ الوصول'],['container_count','عدد الحاويات / الكمية'],['container_type','نوع الحاوية'],['pallets_count','عدد البالتات/الكراتين'],['weight','الوزن'],['grace_days','أيام السماح'],['penalty_start_date','بدء الغرامة'],['release_type','نوع الإفراج'],['guarantee_type','نوع الضمان'],['guarantee_duration','مدة الضمان'],['guarantee_expiry_date','تاريخ انتهاء الضمان'],['broker_id','مكتب التخليص'],['status','الحالة'],['notes','ملاحظات']],
   fields:[
    ['shipment_no','رقم الشهادة / الشحنة','text'],
    ['order_no','رقم أمر التوريد (Order No)','text'],
@@ -232,13 +232,15 @@ const config={
    ['shipment_description','وصف الشحنة / اسم الصنف','text'],
    ['shipping_port','ميناء الشحن','select',['ميناء الإسكندرية','ميناء الدخيلة','ميناء دمياط','ميناء بورسعيد','ميناء السخنة','ميناء سفاجا','مطار القاهرة الدولي','أخرى']],
    ['arrival_port','ميناء الوصول','select',['ميناء الإسكندرية','ميناء الدخيلة','ميناء دمياط','ميناء بورسعيد','ميناء السخنة','ميناء سفاجا','مطار القاهرة الدولي','المصنع','أخرى']],
+   ['arrival_date','تاريخ الوصول','date'],
    ['container_count','الكمية / عدد الحاويات','number'],
+   ['container_type','نوع الحاوية','select',['20 قدم','40 قدم','براد (Reefer)','مكشوفة (Open Top)','طرد عام','أخرى']],
    ['pallets_count','عدد البالتات / الكراتين','number'],
    ['weight','الوزن الإجمالي','number'],
    ['acid_number','رقم ACID','text'],
    ['grace_days','أيام السماح','number'],
    ['penalty_start_date','تاريخ بدء الغرامة','date'],
-   ['temporary_shipment_no','رقم الشحنة في السماح المؤقت','text'],
+   ['release_type','نوع الإفراج','select',['سماح مؤقت','نهائي','دروب','منطقة حرة','تحفظ جمركي','أخرى']],
    ['guarantee_type','نوع الضمان','select',['بنكي','نقدي','تعهد','أخرى']],
    ['guarantee_duration','مدة الضمان','text'],
    ['guarantee_expiry_date','تاريخ انتهاء الضمان','date'],
@@ -341,7 +343,7 @@ window.showPage = async function(p){
   $('dashboardPage').style.display='block';
   $('listPage').style.display='none';
   $('reportsPage').style.display='none';
-  $('addBtn').style.display=currentRole==='viewer'?'none':'';
+  $('addBtn').style.display='none';
   $('importExcelBtnWrap').style.display='none';
   $('downloadTemplateBtn').style.display='none';
   await dashboard();

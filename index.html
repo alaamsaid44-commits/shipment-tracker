@@ -238,7 +238,7 @@ const config={
    ['guarantee_duration','مدة الضمان','text'],
    ['guarantee_expiry_date','تاريخ انتهاء الضمان','date'],
    ['broker_id','مكتب التخليص','broker'],
-   ['status','حالة الشحنة والتتبع','select',['new','in_progress','at_port','released','delivered','closed']],
+   ['status','حالة الشحنة والتتبع','select',['new','in_progress','on_the_way','waiting_for_shipping','at_port','waiting_for_inspection','waiting_for_security_approvals','waiting_for_documents_from_bank','released','delivered','closed']],
    ['document_file','رفع بوليصة / مستند الشحنة','file'],
    ['followup_responsible','مسؤول المتابعة','profile'],
    ['notes','ملاحظات وتفاصيل إضافية','textarea']
@@ -300,7 +300,16 @@ const config={
 
 function toast(msg){$('toast').textContent=msg;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',4000)}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function labelFor(k){return ({incoming:'واردة',outgoing:'صادرة',new:'جديدة',in_progress:'قيد المتابعة',at_port:'بالميناء',released:'تم الإفراج',delivered:'تم التسليم',closed:'مغلقة',EGP:'جنيه مصري',USD:'دولار أمريكي',EUR:'يورو'})[k]||k||'—'}
+function labelFor(k){
+ const map = {
+  incoming:'واردة', outgoing:'صادرة', new:'جديدة', in_progress:'قيد المتابعة',
+  on_the_way:'في الطريق', waiting_for_shipping:'في انتظار الشحن', at_port:'وصلت الميناء',
+  waiting_for_inspection:'في انتظار الكشف والمعاينة', waiting_for_security_approvals:'في انتظار الموافقات الأمنية',
+  waiting_for_documents_from_bank:'في انتظار المستندات من البنك', released:'تم الإفراج',
+  delivered:'تم التسليم', closed:'مغلقة', EGP:'جنيه مصري', USD:'دولار أمريكي', EUR:'يورو'
+ };
+ return map[k]||k||'—';
+}
 
 async function loadProfile(){
  const {data,error}=await db.from('profiles').select('full_name,role').eq('id',currentUser.id).maybeSingle();
@@ -537,7 +546,7 @@ async function dashboard(){
  $('sOutgoing').textContent=all.filter(x=>x.direction==='outgoing').length;
  $('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});
  const recent=all.slice(0,8);
- $('recentShipments').innerHTML=recent.length?'<table><thead><tr><th>رقم الشحنة</th><th>أامر التوريد</th><th>الاتجاه</th><th>تاريخ التسجيل</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${esc(x.shipment_no)}</td><td>${esc(x.order_no||'-')}</td><td>${esc(labelFor(x.direction))}</td><td>${esc(x.created_at?.slice(0,10))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">لا توجد شحنات مسجلة</div>';
+ $('recentShipments').innerHTML=recent.length?'<table><thead><tr><th>رقم الشحنة</th><th>أمر التوريد</th><th>الاتجاه</th><th>تاريخ التسجيل</th></tr></thead><tbody>'+recent.map(x=>`<tr><td>${esc(x.shipment_no)}</td><td>${esc(x.order_no||'-')}</td><td>${esc(labelFor(x.direction))}</td><td>${esc(x.created_at?.slice(0,10))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">لا توجد شحنات مسجلة</div>';
 }
 
 async function optionsFor(type){

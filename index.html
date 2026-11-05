@@ -685,32 +685,51 @@ window.importExcelData = async function(event){
    const workbook = XLSX.read(data, {type: 'array'});
    const firstSheetName = workbook.SheetNames[0];
    const worksheet = workbook.Sheets[firstSheetName];
+   
+   // تحويل الشيت إلى JSON كصفوف مصفوفات (Arrays) لقراءة كل السطور بدقة
    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-   if(json.length < 2){ toast('ملف الإكسيل فارغ أو غير مطابق للنموذج!'); return; }
-   const headers = json[1];
-   const rowsData = json.slice(2);
+   if(json.length < 2){ toast('ملف الإكسيل فارغ!'); return; }
+   
+   // الصف الأول (العناوين البرمجية الإنجليزية بالعمود)
+   const headers = json[1]; 
+   // بدءاً من الصف الثالث وحتى أخر صف في الملف (تم إزالة أي قيود تحدد سطرين فقط)
+   const rowsData = json.slice(2); 
+
    if(!headers || !rowsData.length){ toast('الملف لا يحتوي على بيانات صالحة للاستيراد!'); return; }
-   toast('جاري رفع واستيراد البيانات...');
+   toast(`جاري استيراد ${rowsData.length} سجل للسحابة...`);
+   
    const c = config[page];
    let count = 0;
+   
    for(const rowArr of rowsData){
     let cleanObj = {};
     for(let i=0; i<headers.length; i++){
-     if(headers[i] && rowArr[i] !== undefined){ cleanObj[headers[i]] = rowArr[i]; }
+     if(headers[i] && rowArr[i] !== undefined && rowArr[i] !== ''){ 
+      cleanObj[headers[i]] = rowArr[i]; 
+     }
     }
+    // تخطي الصفوف الفارغة تماماً
     if(Object.keys(cleanObj).length === 0) continue;
-    if(page==='shipments' && !cleanObj.created_by) cleanObj.created_by = currentUser.id;
+    
+    if(page==='shipments' && !cleanObj.created_by && currentUser) cleanObj.created_by = currentUser.id;
+    
     const {error} = await db.from(c.table).insert(cleanObj);
-    if(!error) count++;
+    if(!error) {
+     count++;
+    } else {
+     console.error('خطأ في إدخال الصف:', error.message);
+    }
    }
-   toast(`تم استيراد ${count} سجل بنجاح!`);
+   
+   toast(`تم استيراد ${count} من أصل ${rowsData.length} سجل بنجاح!`);
    event.target.value = '';
    await renderTable(page);
-  } catch(err){ toast('خطأ في قراءة ملف الإكسيل: ' + err.message); }
+  } catch(err){ 
+   toast('خطأ في قراءة ملف الإكسيل: ' + err.message); 
+  }
  };
  reader.readAsArrayBuffer(file);
 }
-
 async function dashboard(){
  const [s,e]=await Promise.all([
   db.from('shipments').select('*',{count:'exact'}),

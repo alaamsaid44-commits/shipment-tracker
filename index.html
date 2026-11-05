@@ -239,8 +239,8 @@ const config={
    ['weight','الوزن الإجمالي','number'],
    ['acid_number','رقم ACID','text'],
    ['grace_days','أيام السماح','number'],
-   ['penalty_start_date','تاريخ بدء الغرامة','date'],
-   ['release_type','نوع الإفراج','select',['سماح مؤقت','نهائي','دروباك','منطقة حرة','تحفظ جمركي','أخرى']],
+   ['penalty_start_date','تاريخ بدء الغرامة (تلقائي)','date'],
+   ['release_type','نوع الإفراج','select',['سماح مؤقت','نهائي','دروب','منطقة حرة','تحفظ جمركي','أخرى']],
    ['guarantee_type','نوع الضمان','select',['بنكي','نقدي','تعهد','أخرى']],
    ['guarantee_duration','مدة الضمان','text'],
    ['guarantee_expiry_date','تاريخ انتهاء الضمان','date'],
@@ -579,6 +579,33 @@ async function optionsFor(type){
  return data||[];
 }
 
+function setupAutoPenaltyDate(){
+ const arrDateInput = document.querySelector('input[name="arrival_date"]');
+ const graceDaysInput = document.querySelector('input[name="grace_days"]');
+ const penaltyDateInput = document.querySelector('input[name="penalty_start_date"]');
+ 
+ if(!arrDateInput || !graceDaysInput || !penaltyDateInput) return;
+
+ const calculatePenaltyDate = () => {
+  const arrDateVal = arrDateInput.value;
+  const graceDaysVal = parseInt(graceDaysInput.value) || 0;
+  
+  if(arrDateVal){
+   const d = new Date(arrDateVal);
+   if(!isNaN(d.getTime())){
+    d.setDate(d.getDate() + graceDaysVal);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    penaltyDateInput.value = `${year}-${month}-${day}`;
+   }
+  }
+ };
+
+ arrDateInput.addEventListener('input', calculatePenaltyDate);
+ graceDaysInput.addEventListener('input', calculatePenaltyDate);
+}
+
 async function openForm(key,id=null){
  if(currentRole==='viewer')return;
  const c=config[key],record=id?rows.find(x=>x.id===id):{};
@@ -606,6 +633,10 @@ async function openForm(key,id=null){
  }
  $('formFields').innerHTML=html;
  $('editModal').classList.add('show');
+
+ if(key==='shipments'){
+  setupAutoPenaltyDate();
+ }
 }
 
 async function saveRecord(ev){

@@ -48,7 +48,8 @@ td .actions{display:flex;gap:6px}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.form-grid .wide{grid-column:1/-1}
 .modal-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:18px}
 .notice{padding:12px 16px;border-radius:12px;background:#fff8e8;color:#8b5c11;font-size:13px;margin:12px 0;border-right:4px solid var(--gold)}
-.alert-box{padding:14px 18px;border-radius:14px;background:#fff0f0;color:#9c27b0;font-size:14px;margin-bottom:20px;border-right:5px solid var(--red);display:flex;align-items:center;justify-content:space-between}
+.alert-box{padding:14px 18px;border-radius:14px;background:#fff0f0;color:#9c27b0;font-size:14px;margin-bottom:12px;border-right:5px solid var(--red);display:flex;align-items:center;justify-content:space-between}
+.alert-box.gold{background:#fffbf0;color:#8b5c11;border-right-color:var(--gold)}
 #toast{position:fixed;bottom:20px;left:20px;background:#142b4a;color:#fff;padding:12px 18px;border-radius:12px;display:none;z-index:30;box-shadow:0 8px 30px #0002;max-width:min(500px,90vw)}
 
 .print-header { display: none; }
@@ -128,9 +129,15 @@ td .actions{display:flex;gap:6px}
    
    <section id="dashboardPage">
     <div id="warrantyAlertBanner" style="display:none;" class="alert-box">
-     <div><strong>⚠️ تنبيه هامة:</strong> يوجد <span id="expiringCount" style="font-weight:bold; color:var(--red);">0</span> شحنة يقترب موعد انتهاء ضمانها أو انتهى بالفعل!</div>
+     <div><strong>⚠️ تنبيه الضمان:</strong> يوجد <span id="expiringCount" style="font-weight:bold; color:var(--red);">0</span> شحنة يقترب موعد انتهاء ضمانها أو انتهى بالفعل!</div>
      <button class="secondary" onclick="showPage('shipments')" style="background:#fff; color:var(--red); padding:4px 10px; font-size:12px;">عرض الشحنات</button>
     </div>
+
+    <div id="penaltyAlertBanner" style="display:none;" class="alert-box gold">
+     <div><strong>⏱️ تنبيه غرامات/أرضيات:</strong> يوجد <span id="penaltyCount" style="font-weight:bold; color:#8b5c11;">0</span> شحنة انتهت أيام السماح لها واقتربت أو بدأت غراماتها!</div>
+     <button class="secondary" onclick="showPage('shipments')" style="background:#fff; color:#8b5c11; padding:4px 10px; font-size:12px;">عرض الشحنات</button>
+    </div>
+
     <div class="cards">
      <div class="stat"><small>إجمالي الشحنات</small><strong id="sShipments">—</strong></div>
      <div class="stat"><small>الشحنات الواردة</small><strong id="sIncoming">—</strong></div>
@@ -717,34 +724,57 @@ async function dashboard(){
  $('sExpenses').textContent=(e.data||[]).reduce((a,x)=>a+Number(x.amount_egp||0),0).toLocaleString('en-US',{maximumFractionDigits:2});
  
  const today = new Date();
- const expiring = all.filter(x => {
+ 
+ // 1. فحص تواريخ الضمان
+ const expiringWarranty = all.filter(x => {
   if(!x.guarantee_expiry_date) return false;
   const exp = new Date(x.guarantee_expiry_date);
   const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
   return diffDays <= 30;
  });
 
- if(expiring.length > 0){
-  $('expiringCount').textContent = expiring.length;
+ if(expiringWarranty.length > 0){
+  $('expiringCount').textContent = expiringWarranty.length;
   $('warrantyAlertBanner').style.display = 'flex';
  } else {
   $('warrantyAlertBanner').style.display = 'none';
  }
 
+ // 2. فحص تواريخ الغرامات والأرضيات
+ const expiringPenalty = all.filter(x => {
+  if(!x.penalty_start_date) return false;
+  const penDate = new Date(x.penalty_start_date);
+  const diffDays = Math.ceil((penDate - today) / (1000 * 60 * 60 * 24));
+  return diffDays <= 7;
+ });
+
+ if(expiringPenalty.length > 0){
+  $('penaltyCount').textContent = expiringPenalty.length;
+  $('penaltyAlertBanner').style.display = 'flex';
+ } else {
+  $('penaltyAlertBanner').style.display = 'none';
+ }
+
  const recent=all.slice(0,8);
  $('recentShipments').innerHTML = recent.length ? 
-  `<table><thead><tr><th>رقم الشهادة / الشحنة</th><th>اسم المورد</th><th>اسم الصنف</th><th>تاريخ انتهاء الضمان</th><th>حالة الشحنة</th></tr></thead><tbody>` +
+  `<table><thead><tr><th>رقم الشهادة / الشحنة</th><th>اسم المورد</th><th>اسم الصنف</th><th>تاريخ انتهاء الضمان</th><th>تاريخ بدء الغرامة</th><th>حالة الشحنة</th></tr></thead><tbody>` +
   recent.map(x => {
-   let isExpiring = false;
+   let isExpiringW = false;
    if(x.guarantee_expiry_date){
     const exp = new Date(x.guarantee_expiry_date);
-    if(Math.ceil((exp - today) / (1000 * 60 * 60 * 24)) <= 30) isExpiring = true;
+    if(Math.ceil((exp - today) / (1000 * 60 * 60 * 24)) <= 30) isExpiringW = true;
+   }
+   let isExpiringP = false;
+   if(x.penalty_start_date){
+    const pen = new Date(x.penalty_start_date);
+    if(Math.ceil((pen - today) / (1000 * 60 * 60 * 24)) <= 7) isExpiringP = true;
    }
    return `<tr>
     <td>${esc(x.shipment_no || x.customs_declaration_no || '-')}</td>
     <td>${esc(x.supplier_name || '-')}</td>
     <td>${esc(x.shipment_description || '-')}</td>
-    <td>${x.guarantee_expiry_date ? `${esc(x.guarantee_expiry_date)} ${isExpiring ? '⚠️' : ''}` : '-'}</td>
+    <td>${x.guarantee_expiry_date ? `${esc(x.guarantee_expiry_date)} ${isExpiringW ? '⚠️' : ''}` : '-'}</td>
+    <td>${x.penalty_start_date ? `${esc(x.penalty_start_date)} ${isExpiringP ? '⏱️' : ''}` : '-'}</td>
     <td><span class="pill">${esc(labelFor(x.status))}</span></td>
    </tr>`;
   }).join('') + `</tbody></table>` : 
